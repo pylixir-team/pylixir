@@ -1,0 +1,9 @@
+**/__pycache__
+.coverage
+.vscode/
+dist/
+docs/_build/
+record.tsv
+report.tsv
+/.stat*
+.sqlite.db

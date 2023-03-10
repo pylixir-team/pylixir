@@ -1,0 +1,85 @@
+[tool.poe.tasks]
+_black-check = "black --check pylixir tests"
+_isort-check = "isort --check-only pylixir tests"
+formatting-check = ["_black-check", "_isort-check"]
+
+_black = "black pylixir tests scripts"
+_isort = "isort pylixir tests scripts"
+format = ["_black", "_isort"]
+
+_pylint = "pylint pylixir tests scripts"
+lint = ["_pylint"]
+
+coverage = "pytest --cov=pylixir --ignore tests/fetch/request"
+coverage-unittest = "pytest --cov=pylixir --ignore tests/fetch/request"
+coverage-report = "pytest --cov=pylixir --cov-report=xml"
+
+unittest = "pytest -vv -x tests/ --ignore tests/fetch/"
+typetest = "mypy pylixir tests"
+clean = "rm -rf **/__pycache__ .coverage .mypy_cache .pytest_cache"
+test = ["coverage", "typetest", "lint", "formatting-check"]
+
+[tool.black]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+skip = "third_party"
+
+[tool.pytest.ini_options]
+addopts = "-vv -x"
+testpaths = ["tests", "test_app", "test_data"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+[tool.coverage.xml]
+output = "coverage-reports/coverage.xml"
+
+[tool.mypy]
+warn_return_any = true
+warn_unused_configs = true
+incremental = false
+disable_error_code = "misc"
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+
+[tool.poetry]
+name = "pylixir"
+version = "0.1.0"
+description = "Elixir simulation library with python"
+authors = ["meson324 <meson324@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/oleneyl/pylixir"
+
+[tool.poetry.dependencies]
+python = ">=3.9, <4.0"
+pydantic = {extras = ["dotenv"], version = "^1.8.2"}
+loguru = "^0.5.3"
+poethepoet = "^0.10.0"
+PyYAML = "^6.0"
+types-PyYAML = "^6.0.4"
+numpy = "^1.22.3"
+scikit-learn = "^1.0.2"
+dependency-injector = "^4.40.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+isort = "^5.9.3"
+coverage = "^6.0.2"
+pylint = "=2.13.1"
+mypy = "^0.981"
+black = "^22.6"
+pytest-cov = "^3.0.0"
+build = "^0.8.0"
+twine = "^4.0.1"
+types-requests = "^2.28.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
