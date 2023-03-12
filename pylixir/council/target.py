@@ -82,3 +82,15 @@ class MaxValueSelector(TargetSelector):
             if state.effect_board.get(idx).value == minimum_value
         ]  # since tatget_condition starts with 1
         return RNG(random_number).shuffle(candidates)[: self.count]
+
+
+class UserSelector(TargetSelector):
+    type: CouncilTargetType = CouncilTargetType.minValue
+
+    def select_targets(
+        self, state: GameState, effect_index: Optional[int], random_number: float
+    ) -> list[int]:
+        if effect_index is None:
+            raise InvalidSelectionException("User Selector requires effect_index")
+
+        return [effect_index]

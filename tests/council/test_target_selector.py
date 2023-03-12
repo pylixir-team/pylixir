@@ -8,6 +8,7 @@ from pylixir.council.target import (
     NoneSelector,
     ProposedSelector,
     RandomSelector,
+    UserSelector,
 )
 
 
@@ -69,3 +70,16 @@ def test_maximum_selector(abundant_state: GameState) -> None:
 
         result = selector.select_targets(abundant_state, None, random_number)
         assert result in ([0], [1])
+
+
+@pytest.mark.parametrize("effect_index", [1, 3, 4])
+def test_user_selector(effect_index: int, abundant_state: GameState) -> None:
+    any_random_number = 42
+    selector = UserSelector(
+        type=CouncilTargetType.none,
+        target_condition=0,
+        count=0,
+    )
+    assert selector.select_targets(abundant_state, effect_index, any_random_number) == [
+        effect_index
+    ]
