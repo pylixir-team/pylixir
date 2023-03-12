@@ -7,8 +7,10 @@ from pylixir.council.target import (
     MaxValueSelector,
     MinValueSelector,
     NoneSelector,
+    OneThreeFiveSelector,
     ProposedSelector,
     RandomSelector,
+    TwoFourSelector,
     UserSelector,
 )
 
@@ -17,7 +19,6 @@ from pylixir.council.target import (
 def test_none_selector(effect_index: int, abundant_state: GameState) -> None:
     any_random_number = 42
     selector = NoneSelector(
-        type=CouncilTargetType.none,
         target_condition=0,
         count=0,
     )
@@ -28,7 +29,6 @@ def test_random_selector(abundant_state: GameState) -> None:
     count = 1
     for random_number in range(10):
         selector = RandomSelector(
-            type=CouncilTargetType.random,
             target_condition=0,
             count=count,
         )
@@ -40,7 +40,6 @@ def test_random_selector(abundant_state: GameState) -> None:
 def test_proposed_selector(target_condition: int, abundant_state: GameState) -> None:
     any_random_number = 42
     selector = ProposedSelector(
-        type=CouncilTargetType.proposed,
         target_condition=target_condition,
         count=1,
     )
@@ -52,7 +51,6 @@ def test_proposed_selector(target_condition: int, abundant_state: GameState) -> 
 def test_minimum_selector(abundant_state: GameState) -> None:
     for random_number in range(100):
         selector = MinValueSelector(
-            type=CouncilTargetType.minValue,
             target_condition=0,
             count=1,
         )
@@ -64,7 +62,6 @@ def test_minimum_selector(abundant_state: GameState) -> None:
 def test_maximum_selector(abundant_state: GameState) -> None:
     for random_number in range(100):
         selector = MaxValueSelector(
-            type=CouncilTargetType.maxValue,
             target_condition=0,
             count=1,
         )
@@ -77,7 +74,6 @@ def test_maximum_selector(abundant_state: GameState) -> None:
 def test_user_selector(effect_index: int, abundant_state: GameState) -> None:
     any_random_number = 42
     selector = UserSelector(
-        type=CouncilTargetType.none,
         target_condition=0,
         count=0,
     )
@@ -95,10 +91,27 @@ def test_lte_selector(
 ) -> None:
     any_random_number = 42
     selector = LteValueSelector(
-        type=CouncilTargetType.proposed,
         target_condition=target_condition,
         count=1,
     )
 
     selected = selector.select_targets(abundant_state, None, any_random_number)
     assert expected == selected
+
+
+def test_one_three_five(abundant_state: GameState) -> None:
+    any_random_number = 42
+    selector = OneThreeFiveSelector(
+        target_condition=0,
+        count=0,
+    )
+    assert selector.select_targets(abundant_state, None, any_random_number) == [0, 2, 4]
+
+
+def test_one_three_five(abundant_state: GameState) -> None:
+    any_random_number = 42
+    selector = TwoFourSelector(
+        target_condition=0,
+        count=0,
+    )
+    assert selector.select_targets(abundant_state, None, any_random_number) == [1, 3]

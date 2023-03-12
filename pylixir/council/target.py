@@ -109,3 +109,21 @@ class LteValueSelector(TargetSelector):
             for idx in availabla_indices
             if state.effect_board.get(idx).value <= self.target_condition
         ]
+
+
+class OneThreeFiveSelector(TargetSelector):
+    type: CouncilTargetType = CouncilTargetType.oneThreeFive
+
+    def select_targets(
+        self, state: GameState, effect_index: Optional[int], random_number: float
+    ) -> list[int]:
+        return [0, 2, 4]
+
+
+class TwoFourSelector(TargetSelector):
+    type: CouncilTargetType = CouncilTargetType.twoFour
+
+    def select_targets(
+        self, state: GameState, effect_index: Optional[int], random_number: float
+    ) -> list[int]:
+        return [1, 3]
