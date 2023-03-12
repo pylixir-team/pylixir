@@ -68,7 +68,7 @@ class ElixirLogic(pydantic.BaseModel, metaclass=abc.ABCMeta):
 
 class TargetSelector(pydantic.BaseModel, metaclass=abc.ABCMeta):
     type: CouncilTargetType
-    condition: int
+    target_condition: int
     count: int
 
     @abc.abstractmethod
