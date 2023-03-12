@@ -63,7 +63,7 @@ class MinValueSelector(TargetSelector):
 
 
 class MaxValueSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.minValue
+    type: CouncilTargetType = CouncilTargetType.maxValue
 
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
@@ -85,7 +85,7 @@ class MaxValueSelector(TargetSelector):
 
 
 class UserSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.minValue
+    type: CouncilTargetType = CouncilTargetType.userSelect
 
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
@@ -94,3 +94,18 @@ class UserSelector(TargetSelector):
             raise InvalidSelectionException("User Selector requires effect_index")
 
         return [effect_index]
+
+
+class LteValueSelector(TargetSelector):
+    type: CouncilTargetType = CouncilTargetType.lteValue
+
+    def select_targets(
+        self, state: GameState, effect_index: Optional[int], random_number: float
+    ) -> list[int]:
+        availabla_indices = state.effect_board.mutable_indices()
+
+        return [
+            idx
+            for idx in availabla_indices
+            if state.effect_board.get(idx).value <= self.target_condition
+        ]

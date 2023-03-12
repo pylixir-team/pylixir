@@ -3,6 +3,7 @@ import pytest
 from pylixir.core.base import GameState
 from pylixir.council.base import CouncilTargetType
 from pylixir.council.target import (
+    LteValueSelector,
     MaxValueSelector,
     MinValueSelector,
     NoneSelector,
@@ -83,3 +84,21 @@ def test_user_selector(effect_index: int, abundant_state: GameState) -> None:
     assert selector.select_targets(abundant_state, effect_index, any_random_number) == [
         effect_index
     ]
+
+
+@pytest.mark.parametrize(
+    "target_condition, expected",
+    [(0, []), (1, []), (3, [3, 4]), (5, [2, 3, 4]), (6, [2, 3, 4])],
+)
+def test_lte_selector(
+    target_condition: int, expected: list[int], abundant_state: GameState
+) -> None:
+    any_random_number = 42
+    selector = LteValueSelector(
+        type=CouncilTargetType.proposed,
+        target_condition=target_condition,
+        count=1,
+    )
+
+    selected = selector.select_targets(abundant_state, None, any_random_number)
+    assert expected == selected
