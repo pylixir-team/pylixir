@@ -86,3 +86,15 @@ class IncreaseTargetRanged(ElixirLogic):
         state.modify_effect_count(target, diff)
 
         return state
+
+
+class DecreaseTurnLeft(ElixirLogic):
+    js_alias: str = "decreaseTurnLeft"
+
+    def reduce(
+        self, state: GameState, targets: list[int], random_number: float
+    ) -> GameState:
+        state = state.deepcopy()
+        state.consume_turn(self.value[0])
+
+        return state

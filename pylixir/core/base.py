@@ -92,6 +92,8 @@ class GameState(pydantic.BaseModel):
         basis = min(max(0, basis), MAX_EFFECT_COUNT)
         self.effects[effect_index].value = basis
 
+    def consume_turn(self, count: int):
+        self.turn_left -= count
 
 class RNG:
     def sample(self) -> float:
