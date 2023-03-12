@@ -3,6 +3,7 @@ import pytest
 from pylixir.core.base import GameState
 from pylixir.council.base import CouncilTargetType
 from pylixir.council.target import (
+    MaxValueSelector,
     MinValueSelector,
     NoneSelector,
     ProposedSelector,
@@ -49,10 +50,22 @@ def test_proposed_selector(target_condition: int, abundant_state: GameState) -> 
 def test_minimum_selector(abundant_state: GameState) -> None:
     for random_number in range(100):
         selector = MinValueSelector(
-            type=CouncilTargetType.proposed,
+            type=CouncilTargetType.minValue,
             target_condition=0,
             count=1,
         )
 
         result = selector.select_targets(abundant_state, None, random_number)
         assert result in ([3], [4])
+
+
+def test_maximum_selector(abundant_state: GameState) -> None:
+    for random_number in range(100):
+        selector = MaxValueSelector(
+            type=CouncilTargetType.maxValue,
+            target_condition=0,
+            count=1,
+        )
+
+        result = selector.select_targets(abundant_state, None, random_number)
+        assert result in ([0], [1])

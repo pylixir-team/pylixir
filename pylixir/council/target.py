@@ -60,3 +60,25 @@ class MinValueSelector(TargetSelector):
             if state.effect_board.get(idx).value == minimum_value
         ]  # since tatget_condition starts with 1
         return RNG(random_number).shuffle(candidates)[: self.count]
+
+
+class MaxValueSelector(TargetSelector):
+    type: CouncilTargetType = CouncilTargetType.minValue
+
+    def select_targets(
+        self, state: GameState, effect_index: Optional[int], random_number: float
+    ) -> list[int]:
+        if self.target_condition != 0:
+            raise InvalidSelectionException("Invalid proposed selector")
+
+        availabla_indices = state.effect_board.mutable_indices()
+        minimum_value = max(
+            [state.effect_board.get(idx).value for idx in availabla_indices]
+        )
+
+        candidates = [
+            idx
+            for idx in availabla_indices
+            if state.effect_board.get(idx).value == minimum_value
+        ]  # since tatget_condition starts with 1
+        return RNG(random_number).shuffle(candidates)[: self.count]
