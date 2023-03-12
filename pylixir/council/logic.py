@@ -187,6 +187,7 @@ class UnlockAndLockOther(ElixirLogic):
 
         return state
 
+
 ## TODO: implement this
 class ChangeEffect(ElixirLogic):
     js_alias: str = "changeEffect"
@@ -195,3 +196,20 @@ class ChangeEffect(ElixirLogic):
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
         return state.deepcopy()
+
+
+class LockTarget(ElixirLogic):
+    js_alias: str = "lockTarget"
+
+    def reduce(
+        self, state: GameState, targets: list[int], random_number: float
+    ) -> GameState:
+        if len(targets) != 1:
+            raise TargetSizeMismatchException
+
+        state = state.deepcopy()
+        target = targets[0]
+
+        state.lock(target)
+
+        return state

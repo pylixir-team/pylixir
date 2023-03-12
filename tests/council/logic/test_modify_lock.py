@@ -1,7 +1,7 @@
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.council.logic import UnlockAndLockOther
+from pylixir.council.logic import LockTarget, UnlockAndLockOther
 
 
 # Each test will run this with random number(seed) 1~100
@@ -41,3 +41,17 @@ def test_unlock_and_lock_other(
         correct_count += 1
 
     assert correct_count == total_run_count
+
+
+def test_lock_target(abundant_state: GameState) -> None:
+    target_index = 3
+
+    logic = LockTarget(
+        ratio=0,
+        value=(0, 0),
+        remain_turn=1,
+    )
+
+    changed_state = logic.reduce(abundant_state, [target_index], 3456)
+
+    assert changed_state.effects[target_index].locked
