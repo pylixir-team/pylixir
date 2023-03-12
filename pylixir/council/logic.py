@@ -98,3 +98,31 @@ class DecreaseTurnLeft(ElixirLogic):
         state.consume_turn(self.value[0])
 
         return state
+
+
+class ShuffleAll(ElixirLogic):
+    js_alias: str = "shuffleAll"
+
+    def reduce(
+        self, state: GameState, targets: list[int], random_number: float
+    ) -> GameState:
+        state = state.deepcopy()
+
+        effect_length = len(state.effects)
+        original_values = [effect.value for effect in state.effects]
+        unlocked_target_indices = [
+            idx for idx, effect in enumerate(state.effects) if not effect.locked
+        ]
+        locked_target_indices = [
+            idx for idx in range(effect_length) if idx not in unlocked_target_indices
+        ]
+
+        starting = unlocked_target_indices + locked_target_indices
+
+        shuffled_indices = RNG.shuffle(unlocked_target_indices, random_number)
+        ending = shuffled_indices + locked_target_indices
+
+        for start, end in zip(starting, ending):
+            state.set_effect_count(start, original_values[end])
+
+        return state

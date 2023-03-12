@@ -1,13 +1,14 @@
 import pytest
 
 from pylixir.core.base import GameState
+from pylixir.council.base import ElixirLogic
 from pylixir.council.logic import (
     IncreaseTargetRanged,
     IncreaseTargetWithRatio,
     TargetSizeMismatchException,
 )
 from tests.council.logic.util import assert_effect_changed
-
+from typing import Type
 
 @pytest.mark.parametrize(
     "ratio, random_number, success",
@@ -36,7 +37,7 @@ def test_increase_target_with_ratio(
 
 
 @pytest.mark.parametrize(
-    "range, random_number, amount",
+    "value_range, random_number, amount",
     [
         ((1, 2), 2500, 1),
         ((1, 2), 7500, 2),
@@ -48,12 +49,12 @@ def test_increase_target_with_ratio(
     ],
 )
 def test_increase_target_ranged(
-    range: tuple[int, int], random_number: float, amount: int, abundant_state: GameState
+    value_range: tuple[int, int], random_number: float, amount: int, abundant_state: GameState
 ) -> None:
     target_index = 0
     logic = IncreaseTargetRanged(
         ratio=0,
-        value=range,
+        value=value_range,
         remain_turn=1,
     )
 
@@ -74,8 +75,8 @@ def test_increase_target_ranged(
     ],
 )
 def test_increase_target_with_ratio_reject_multiple_target(
-    logic_class, abundant_state: GameState
-):
+    logic_class: Type[ElixirLogic], abundant_state: GameState
+) -> None:
     with pytest.raises(TargetSizeMismatchException):
         logic_class(
             ratio=2500,

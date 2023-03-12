@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import enum
+from random import Random
 from typing import Optional
 
 import pydantic
@@ -58,6 +59,9 @@ class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
     value: int
     locked: bool
 
+    def lock(self) -> None:
+        self.locked = True
+
 
 class GamePhase(enum.Enum):
     option = "option"
@@ -92,14 +96,30 @@ class GameState(pydantic.BaseModel):
         basis = min(max(0, basis), MAX_EFFECT_COUNT)
         self.effects[effect_index].value = basis
 
+    def set_effect_count(self, effect_index: int, amount: int) -> None:
+        self.effects[effect_index].value = amount
+
     def consume_turn(self, count: int):
         self.turn_left -= count
+
+    def get_effect_values(self) -> tuple[int, int, int, int, int]:
+        return [effect.value for effect in self.effects]
+
+    def lock(self, effect_index: int) -> None:
+        self.effects[effect_index].lock()
+
 
 class RNG:
     def sample(self) -> float:
         ...
 
     @classmethod
-    def ranged(self, min: int, max: int, random_number: float):
+    def ranged(cls, min: int, max: int, random_number: float) -> int:
         bin_size = max - min + 1
         return int(random_number / 10000 * bin_size) + min
+
+    @classmethod
+    def shuffle(cls, values: list[int], random_number: float) -> list[int]:
+        result = list(values)
+        Random(random_number).shuffle(result)
+        return result
