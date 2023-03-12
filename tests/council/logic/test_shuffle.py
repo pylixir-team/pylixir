@@ -9,9 +9,9 @@ from pylixir.council.logic import ShuffleAll
 @pytest.mark.parametrize("locked_indices", [[], [1], [1, 2], [1, 2, 4], [3, 4]])
 def test_shuffle(locked_indices: list[int], abundant_state: GameState) -> None:
     for idx in locked_indices:
-        abundant_state.lock(idx)
+        abundant_state.effect_board.lock(idx)
 
-    original_values = abundant_state.get_effect_values()
+    original_values = abundant_state.effect_board.get_effect_values()
     total_run_count = 100
     logic = ShuffleAll(
         ratio=0,
@@ -24,7 +24,7 @@ def test_shuffle(locked_indices: list[int], abundant_state: GameState) -> None:
 
     for random_number in range(total_run_count):
         changed_state = logic.reduce(abundant_state, [], random_number)
-        changed_values = changed_state.get_effect_values()
+        changed_values = changed_state.effect_board.get_effect_values()
         if set(changed_values) != set(original_values):
             continue
         if any(changed_values[idx] != original_values[idx] for idx in locked_indices):

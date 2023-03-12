@@ -1,9 +1,10 @@
 import abc
 import enum
+from typing import Optional
 
 import pydantic
 
-from pylixir.core.base import GameState
+from pylixir.core.base import Decision, GameState
 
 """
 class CouncilLogicType(enum.Enum):
@@ -65,8 +66,25 @@ class ElixirLogic(pydantic.BaseModel, metaclass=abc.ABCMeta):
         ...
 
 
+class TargetSelector(pydantic.BaseModel, metaclass=abc.ABCMeta):
+    type: CouncilTargetType
+    condition: int
+    count: int
+
+    @abc.abstractmethod
+    def select_targets(
+        self, state: GameState, effect_index: Optional[int]
+    ) -> list[int]:
+        ...
+
+
 class Council(pydantic.BaseModel):
     id: str
+    logic: ElixirLogic
+    target_selector: TargetSelector
+
+    def get_targets(self, state: GameState, decision: Decision):
+        ...
 
 
 class CouncilRepository:

@@ -63,7 +63,7 @@ class IncreaseTargetWithRatio(ElixirLogic):
         state = state.deepcopy()
 
         if random_number <= self.ratio:
-            state.modify_effect_count(target, self.value[0])
+            state.effect_board.modify_effect_count(target, self.value[0])
 
         return state
 
@@ -83,7 +83,7 @@ class IncreaseTargetRanged(ElixirLogic):
         diff_min, diff_max = self.value
         diff = RNG.ranged(diff_min, diff_max, random_number)
 
-        state.modify_effect_count(target, diff)
+        state.effect_board.modify_effect_count(target, diff)
 
         return state
 
@@ -108,22 +108,17 @@ class ShuffleAll(ElixirLogic):
     ) -> GameState:
         state = state.deepcopy()
 
-        effect_length = len(state.effects)
-        original_values = [effect.value for effect in state.effects]
-        unlocked_target_indices = [
-            idx for idx, effect in enumerate(state.effects) if not effect.locked
-        ]
-        locked_target_indices = [
-            idx for idx in range(effect_length) if idx not in unlocked_target_indices
-        ]
+        original_values = state.effect_board.get_effect_values()
+        unlocked_indices = state.effect_board.unlocked_indices()
+        locked_indices = state.effect_board.locked_indices()
 
-        starting = unlocked_target_indices + locked_target_indices
+        starting = unlocked_indices + locked_indices
 
-        shuffled_indices = RNG.shuffle(unlocked_target_indices, random_number)
-        ending = shuffled_indices + locked_target_indices
+        shuffled_indices = RNG.shuffle(unlocked_indices, random_number)
+        ending = shuffled_indices + locked_indices
 
         for start, end in zip(starting, ending):
-            state.set_effect_count(start, original_values[end])
+            state.effect_board.set_effect_count(start, original_values[end])
 
         return state
 
@@ -168,22 +163,14 @@ class UnlockAndLockOther(ElixirLogic):
     ) -> GameState:
         state = state.deepcopy()
 
-        effect_length = len(state.effects)
-
-        unlocked_target_indices = [
-            idx for idx, effect in enumerate(state.effects) if not effect.locked
-        ]
-        locked_target_indices = [
-            idx for idx in range(effect_length) if idx not in unlocked_target_indices
-        ]
-
-        will_unlock = RNG.pick(locked_target_indices, random_number)
+        will_unlock = RNG.pick(state.effect_board.locked_indices(), random_number)
         will_lock = RNG.pick(
-            unlocked_target_indices, RNG.chained_sample(random_number + 0.5)
+            state.effect_board.unlocked_indices(),
+            RNG.chained_sample(random_number + 0.5),
         )  # 0.5 can be any float; it has no meaning
 
-        state.lock(will_lock)
-        state.unlock(will_unlock)
+        state.effect_board.lock(will_lock)
+        state.effect_board.unlock(will_unlock)
 
         return state
 
@@ -210,7 +197,7 @@ class LockTarget(ElixirLogic):
         state = state.deepcopy()
         target = targets[0]
 
-        state.lock(target)
+        state.effect_board.lock(target)
 
         return state
 
@@ -222,8 +209,6 @@ class IncreaseReroll(ElixirLogic):
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
         state = state.deepcopy()
-        state.reroll_left
-
         state.modify_reroll(self.value[0])
 
         return state

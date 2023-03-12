@@ -18,5 +18,7 @@ def assert_effect_changed(
     if amount == 0:
         assert source == target
     else:
-        source.modify_effect_count(effect_index=effect_index, amount=amount)
+        source.effect_board.modify_effect_count(
+            effect_index=effect_index, amount=amount
+        )
         assert source == target

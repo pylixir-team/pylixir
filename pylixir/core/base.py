@@ -76,11 +76,45 @@ class GamePhase(enum.Enum):
 MAX_EFFECT_COUNT = 13
 
 
+class EffectBoard(pydantic.BaseModel):
+    effects: tuple[Effect, Effect, Effect, Effect, Effect]
+
+    def lock(self, effect_index: int) -> None:
+        self.effects[effect_index].lock()
+
+    def unlock(self, effect_index: int) -> None:
+        self.effects[effect_index].unlock()
+
+    def get_effect_values(self) -> tuple[int, int, int, int, int]:
+        return [effect.value for effect in self.effects]
+
+    def modify_effect_count(self, effect_index: int, amount: int) -> None:
+        basis = self.effects[effect_index].value
+        basis += amount
+        basis = min(max(0, basis), MAX_EFFECT_COUNT)
+        self.effects[effect_index].value = basis
+
+    def set_effect_count(self, effect_index: int, amount: int) -> None:
+        self.effects[effect_index].value = amount
+
+    def unlocked_indices(self) -> list[int]:
+        return [idx for idx, effect in enumerate(self.effects) if not effect.locked]
+
+    def locked_indices(self) -> list[int]:
+        return [idx for idx, effect in enumerate(self.effects) if effect.locked]
+
+    def get(self, idx) -> Effect:
+        return self.effects[idx]
+
+    def __len__(self) -> int:
+        return len(self.effects)
+
+
 class GameState(pydantic.BaseModel):
     phase: GamePhase
     turn_left: int
     reroll_left: int
-    effects: tuple[Effect, Effect, Effect, Effect, Effect]
+    effect_board: EffectBoard
     mutations: list[Mutation]
     sages: tuple[Sage, Sage, Sage]
 
@@ -93,26 +127,8 @@ class GameState(pydantic.BaseModel):
     def deepcopy(self) -> GameState:
         return self.copy(deep=True)
 
-    def modify_effect_count(self, effect_index: int, amount: int) -> None:
-        basis = self.effects[effect_index].value
-        basis += amount
-        basis = min(max(0, basis), MAX_EFFECT_COUNT)
-        self.effects[effect_index].value = basis
-
-    def set_effect_count(self, effect_index: int, amount: int) -> None:
-        self.effects[effect_index].value = amount
-
     def consume_turn(self, count: int):
         self.turn_left -= count
-
-    def get_effect_values(self) -> tuple[int, int, int, int, int]:
-        return [effect.value for effect in self.effects]
-
-    def lock(self, effect_index: int) -> None:
-        self.effects[effect_index].lock()
-
-    def unlock(self, effect_index: int) -> None:
-        self.effects[effect_index].unlock()
 
     def modify_reroll(self, amount: int) -> None:
         self.reroll_left += amount
