@@ -3,15 +3,14 @@ _black-check = "black --check pylixir tests"
 _isort-check = "isort --check-only pylixir tests"
 formatting-check = ["_black-check", "_isort-check"]
 
-_black = "black pylixir tests scripts"
-_isort = "isort pylixir tests scripts"
+_black = "black pylixir tests"
+_isort = "isort pylixir tests"
 format = ["_black", "_isort"]
 
-_pylint = "pylint pylixir tests scripts"
+_pylint = "pylint pylixir tests"
 lint = ["_pylint"]
 
-coverage = "pytest --cov=pylixir --ignore tests/fetch/request"
-coverage-unittest = "pytest --cov=pylixir --ignore tests/fetch/request"
+coverage = "pytest --cov=pylixir"
 coverage-report = "pytest --cov=pylixir --cov-report=xml"
 
 unittest = "pytest -vv -x tests/ --ignore tests/fetch/"
@@ -28,7 +27,7 @@ skip = "third_party"
 
 [tool.pytest.ini_options]
 addopts = "-vv -x"
-testpaths = ["tests", "test_app", "test_data"]
+testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
@@ -44,9 +43,8 @@ warn_return_any = true
 warn_unused_configs = true
 incremental = false
 disable_error_code = "misc"
+strict = true
 
-[[tool.mypy.overrides]]
-ignore_missing_imports = true
 
 [tool.poetry]
 name = "pylixir"
