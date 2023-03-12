@@ -186,3 +186,12 @@ class UnlockAndLockOther(ElixirLogic):
         state.unlock(will_unlock)
 
         return state
+
+## TODO: implement this
+class ChangeEffect(ElixirLogic):
+    js_alias: str = "changeEffect"
+
+    def reduce(
+        self, state: GameState, targets: list[int], random_number: float
+    ) -> GameState:
+        return state.deepcopy()
