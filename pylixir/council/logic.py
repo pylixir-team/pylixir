@@ -126,3 +126,35 @@ class ShuffleAll(ElixirLogic):
             state.set_effect_count(start, original_values[end])
 
         return state
+
+
+class SetEnchantTargetAndAmount(ElixirLogic):
+    js_alias: str = "setEnchantTargetAndAmount"
+
+    def reduce(
+        self, state: GameState, targets: list[int], random_number: float
+    ) -> GameState:
+        state = state.deepcopy()
+        mutations = []
+        for target in targets:
+            mutations.extend(
+                [
+                    Mutation(
+                        target=MutationTarget.prob,
+                        index=target,
+                        value=10000,
+                        remain_turn=self.remain_turn,
+                    ),
+                    Mutation(
+                        target=MutationTarget.enchant_increase_amount,
+                        index=-1,
+                        value=self.value[0],
+                        remain_turn=self.remain_turn,
+                    ),
+                ]
+            )
+
+        for mutation in mutations:
+            state.add_mutation(mutation)
+
+        return state

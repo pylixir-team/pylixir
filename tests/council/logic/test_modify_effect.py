@@ -1,3 +1,5 @@
+from typing import Type
+
 import pytest
 
 from pylixir.core.base import GameState
@@ -8,7 +10,7 @@ from pylixir.council.logic import (
     TargetSizeMismatchException,
 )
 from tests.council.logic.util import assert_effect_changed
-from typing import Type
+
 
 @pytest.mark.parametrize(
     "ratio, random_number, success",
@@ -49,7 +51,10 @@ def test_increase_target_with_ratio(
     ],
 )
 def test_increase_target_ranged(
-    value_range: tuple[int, int], random_number: float, amount: int, abundant_state: GameState
+    value_range: tuple[int, int],
+    random_number: float,
+    amount: int,
+    abundant_state: GameState,
 ) -> None:
     target_index = 0
     logic = IncreaseTargetRanged(
