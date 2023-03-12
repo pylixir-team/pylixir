@@ -73,7 +73,7 @@ class TargetSelector(pydantic.BaseModel, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def select_targets(
-        self, state: GameState, effect_index: Optional[int]
+        self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
         ...
 

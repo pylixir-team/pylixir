@@ -58,12 +58,16 @@ class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
     name: str
     value: int
     locked: bool
+    max_value: int
 
     def lock(self) -> None:
         self.locked = True
 
     def unlock(self) -> None:
         self.locked = False
+
+    def is_mutable(self) -> bool:
+        return not self.locked and self.value < self.max_value
 
 
 class GamePhase(enum.Enum):
@@ -84,6 +88,9 @@ class EffectBoard(pydantic.BaseModel):
 
     def unlock(self, effect_index: int) -> None:
         self.effects[effect_index].unlock()
+
+    def mutable_indices(self) -> list[int]:
+        return [idx for idx, effect in enumerate(self.effects) if effect.is_mutable()]
 
     def get_effect_values(self) -> tuple[int, int, int, int, int]:
         return [effect.value for effect in self.effects]
@@ -160,6 +167,6 @@ class RNG:
         return result
 
     @classmethod
-    def pick(cls, values: list[int], random_number: float) -> list[int]:
+    def pick(cls, values: list[int], random_number: float) -> int:
         shuffled = cls.shuffle(values, random_number)
         return shuffled[0]
