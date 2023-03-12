@@ -96,3 +96,8 @@ class GameState(pydantic.BaseModel):
 class RNG:
     def sample(self) -> float:
         ...
+
+    @classmethod
+    def ranged(self, min: int, max: int, random_number: float):
+        bin_size = max - min + 1
+        return int(random_number / 10000 * bin_size) + min

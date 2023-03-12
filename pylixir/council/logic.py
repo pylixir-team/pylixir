@@ -1,4 +1,4 @@
-from pylixir.core.base import GameState, Mutation, MutationTarget
+from pylixir.core.base import RNG, GameState, Mutation, MutationTarget
 from pylixir.council.base import ElixirLogic
 
 
@@ -64,5 +64,25 @@ class IncreaseTargetWithRatio(ElixirLogic):
 
         if random_number <= self.ratio:
             state.modify_effect_count(target, self.value[0])
+
+        return state
+
+
+class IncreaseTargetRanged(ElixirLogic):
+    js_alias: str = "increaseTargetRanged"
+
+    def reduce(
+        self, state: GameState, targets: list[int], random_number: float
+    ) -> GameState:
+        if len(targets) != 1:
+            raise TargetSizeMismatchException
+
+        target = targets[0]
+        state = state.deepcopy()
+
+        diff_min, diff_max = self.value
+        diff = RNG.ranged(diff_min, diff_max, random_number)
+
+        state.modify_effect_count(target, diff)
 
         return state
