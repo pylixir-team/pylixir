@@ -1,14 +1,6 @@
 import pytest
 
-from pylixir.core.base import (
-    Effect,
-    GamePhase,
-    GameState,
-    Mutation,
-    MutationTarget,
-    Sage,
-)
-from pylixir.council.base import ElixirLogic
+from pylixir.core.base import Effect, GamePhase, GameState, Sage
 
 
 @pytest.fixture

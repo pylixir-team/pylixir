@@ -1,7 +1,4 @@
-from pylixir.core.base import (
-    GameState,
-    Mutation,
-)
+from pylixir.core.base import GameState, Mutation
 
 
 def assert_mutation_extended(
