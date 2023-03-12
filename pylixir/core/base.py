@@ -66,6 +66,9 @@ class GamePhase(enum.Enum):
     done = "done"
 
 
+MAX_EFFECT_COUNT = 13
+
+
 class GameState(pydantic.BaseModel):
     phase: GamePhase
     turn_left: int
@@ -82,6 +85,12 @@ class GameState(pydantic.BaseModel):
 
     def deepcopy(self) -> GameState:
         return self.copy(deep=True)
+
+    def modify_effect_count(self, effect_index: int, amount: int) -> None:
+        basis = self.effects[effect_index].value
+        basis += amount
+        basis = min(max(0, basis), MAX_EFFECT_COUNT)
+        self.effects[effect_index].value = basis
 
 
 class RNG:
