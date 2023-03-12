@@ -158,3 +158,31 @@ class SetEnchantTargetAndAmount(ElixirLogic):
             state.add_mutation(mutation)
 
         return state
+
+
+class UnlockAndLockOther(ElixirLogic):
+    js_alias: str = "unlockAndLockOther"
+
+    def reduce(
+        self, state: GameState, targets: list[int], random_number: float
+    ) -> GameState:
+        state = state.deepcopy()
+
+        effect_length = len(state.effects)
+
+        unlocked_target_indices = [
+            idx for idx, effect in enumerate(state.effects) if not effect.locked
+        ]
+        locked_target_indices = [
+            idx for idx in range(effect_length) if idx not in unlocked_target_indices
+        ]
+
+        will_unlock = RNG.pick(locked_target_indices, random_number)
+        will_lock = RNG.pick(
+            unlocked_target_indices, RNG.chained_sample(random_number + 0.5)
+        )  # 0.5 can be any float; it has no meaning
+
+        state.lock(will_lock)
+        state.unlock(will_unlock)
+
+        return state

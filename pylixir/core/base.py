@@ -62,6 +62,9 @@ class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
     def lock(self) -> None:
         self.locked = True
 
+    def unlock(self) -> None:
+        self.locked = False
+
 
 class GamePhase(enum.Enum):
     option = "option"
@@ -108,18 +111,36 @@ class GameState(pydantic.BaseModel):
     def lock(self, effect_index: int) -> None:
         self.effects[effect_index].lock()
 
+    def unlock(self, effect_index: int) -> None:
+        self.effects[effect_index].unlock()
+
 
 class RNG:
+    def __init__(self, start_seed: float):
+        self._seed = start_seed
+
     def sample(self) -> float:
-        ...
+        sampled = self.chained_sample(self._seed)
+        self._seed = sampled
+
+        return sampled
 
     @classmethod
-    def ranged(cls, min: int, max: int, random_number: float) -> int:
-        bin_size = max - min + 1
-        return int(random_number / 10000 * bin_size) + min
+    def chained_sample(cls, random_number: float) -> float:
+        return Random(random_number).random() * 10000
+
+    @classmethod
+    def ranged(cls, min_range: int, max_range: int, random_number: float) -> int:
+        bin_size = max_range - min_range + 1
+        return int(random_number / 10000 * bin_size) + min_range
 
     @classmethod
     def shuffle(cls, values: list[int], random_number: float) -> list[int]:
         result = list(values)
         Random(random_number).shuffle(result)
         return result
+
+    @classmethod
+    def pick(cls, values: list[int], random_number: float) -> list[int]:
+        shuffled = cls.shuffle(values, random_number)
+        return shuffled[0]
