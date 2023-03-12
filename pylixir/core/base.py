@@ -114,6 +114,9 @@ class GameState(pydantic.BaseModel):
     def unlock(self, effect_index: int) -> None:
         self.effects[effect_index].unlock()
 
+    def modify_reroll(self, amount: int) -> None:
+        self.reroll_left += amount
+
 
 class RNG:
     def __init__(self, start_seed: float):

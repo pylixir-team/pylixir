@@ -213,3 +213,17 @@ class LockTarget(ElixirLogic):
         state.lock(target)
 
         return state
+
+
+class IncreaseReroll(ElixirLogic):
+    js_alias: str = "increaseReroll"
+
+    def reduce(
+        self, state: GameState, targets: list[int], random_number: float
+    ) -> GameState:
+        state = state.deepcopy()
+        state.reroll_left
+
+        state.modify_reroll(self.value[0])
+
+        return state
