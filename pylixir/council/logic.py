@@ -114,7 +114,7 @@ class ShuffleAll(ElixirLogic):
 
         starting = unlocked_indices + locked_indices
 
-        shuffled_indices = RNG.shuffle(unlocked_indices, random_number)
+        shuffled_indices = RNG(random_number).shuffle(unlocked_indices)
         ending = shuffled_indices + locked_indices
 
         for start, end in zip(starting, ending):
@@ -163,11 +163,10 @@ class UnlockAndLockOther(ElixirLogic):
     ) -> GameState:
         state = state.deepcopy()
 
-        will_unlock = RNG.pick(state.effect_board.locked_indices(), random_number)
-        will_lock = RNG.pick(
-            state.effect_board.unlocked_indices(),
-            RNG.chained_sample(random_number + 0.5),
-        )  # 0.5 can be any float; it has no meaning
+        rng = RNG(random_number)
+
+        will_unlock = rng.fork().pick(state.effect_board.locked_indices())
+        will_lock = rng.fork().pick(state.effect_board.unlocked_indices())
 
         state.effect_board.lock(will_lock)
         state.effect_board.unlock(will_unlock)

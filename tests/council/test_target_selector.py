@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import Decision, GameState
+from pylixir.core.base import GameState
 from pylixir.council.base import CouncilTargetType
 from pylixir.council.target import (
     MinValueSelector,
@@ -18,9 +18,7 @@ def test_none_selector(effect_index: int, abundant_state: GameState) -> None:
         target_condition=0,
         count=0,
     )
-    assert not selector.select_targets(
-        abundant_state, effect_index, any_random_number
-    )
+    assert not selector.select_targets(abundant_state, effect_index, any_random_number)
 
 
 def test_random_selector(abundant_state: GameState) -> None:
@@ -57,4 +55,4 @@ def test_minimum_selector(abundant_state: GameState) -> None:
         )
 
         result = selector.select_targets(abundant_state, None, random_number)
-        assert result == [3] or result == [4]
+        assert result in ([3], [4])

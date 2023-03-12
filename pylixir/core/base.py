@@ -151,6 +151,18 @@ class RNG:
 
         return sampled
 
+    def fork(self) -> RNG:
+        """
+        fork to New RNG.
+        fork will create new RNG, with modifiing self's seed.
+        this is not idempotent; consequtive fork may yield different RNG.
+        """
+        forked_random_number_generator = RNG(self._seed + 1)
+        self._seed += 1
+        self.sample()
+
+        return forked_random_number_generator
+
     @classmethod
     def chained_sample(cls, random_number: float) -> float:
         return Random(random_number).random() * 10000
@@ -160,13 +172,11 @@ class RNG:
         bin_size = max_range - min_range + 1
         return int(random_number / 10000 * bin_size) + min_range
 
-    @classmethod
-    def shuffle(cls, values: list[int], random_number: float) -> list[int]:
+    def shuffle(self, values: list[int]) -> list[int]:
         result = list(values)
-        Random(random_number).shuffle(result)
+        Random(self.sample()).shuffle(result)
         return result
 
-    @classmethod
-    def pick(cls, values: list[int], random_number: float) -> int:
-        shuffled = cls.shuffle(values, random_number)
+    def pick(self, values: list[int]) -> int:
+        shuffled = self.shuffle(values)
         return shuffled[0]

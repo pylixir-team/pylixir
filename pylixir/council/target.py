@@ -25,7 +25,7 @@ class RandomSelector(TargetSelector):
     ) -> list[int]:
         mutable_indices = state.effect_board.mutable_indices()
 
-        return RNG.shuffle(mutable_indices, random_number)[: self.count]
+        return RNG(random_number).shuffle(mutable_indices)[: self.count]
 
 
 class ProposedSelector(TargetSelector):
@@ -59,4 +59,4 @@ class MinValueSelector(TargetSelector):
             for idx in availabla_indices
             if state.effect_board.get(idx).value == minimum_value
         ]  # since tatget_condition starts with 1
-        return RNG.shuffle(candidates, random_number)[: self.count]
+        return RNG(random_number).shuffle(candidates)[: self.count]
