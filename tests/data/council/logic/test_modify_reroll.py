@@ -1,7 +1,7 @@
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.council.logic import IncreaseReroll
+from pylixir.data.council.logic import IncreaseReroll
 
 
 @pytest.mark.parametrize("reroll_amount", [1, 2])

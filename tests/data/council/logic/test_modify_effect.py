@@ -3,13 +3,13 @@ from typing import Type
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.council.base import ElixirLogic
-from pylixir.council.logic import (
+from pylixir.core.council import ElixirLogic
+from pylixir.data.council.logic import (
     IncreaseTargetRanged,
     IncreaseTargetWithRatio,
     TargetSizeMismatchException,
 )
-from tests.council.logic.util import assert_effect_changed
+from tests.data.council.logic.util import assert_effect_changed
 
 
 @pytest.mark.parametrize(

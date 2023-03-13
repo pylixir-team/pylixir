@@ -1,7 +1,7 @@
 import pydantic
 
 from pylixir.core.base import RNG, Decision, GameState
-from pylixir.council.base import Council, CouncilRepository
+from pylixir.core.council import Council, CouncilRepository
 
 
 class Client(pydantic.BaseModel):
@@ -14,12 +14,20 @@ class Client(pydantic.BaseModel):
         self._rng = rng
 
     def run(self, state: GameState, decision: Decision) -> GameState:
-        council = state.councils[decision.sage_index]
-        mutation = council.pick(decision.effect_index, self._rng.sample())
+        # council_id = state.council_ids[decision.sage_index]
+        # council = self._council_repository.get_council(council_id)
 
-        state.add_mutation(mutation)
-        state.enchant(self._rng.sample())
+        targets = council.target_selector.select_targets(
+            state, decision.effect_index, self.step_rng()
+        )
+        new_state = council.logic.reduce(state, targets, self.step_rng())
 
-        state.councils = self._council_repository.sample(state)
+        new_state.enchant(self._rng.sample())
 
-        return state
+        # new_state.replace_council_ids(self._council_repository.sample(new_state))
+
+        return new_state
+
+    def step_rng(self) -> float:
+        forked_rng = self._rng.fork()
+        return forked_rng.sample()

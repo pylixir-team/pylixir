@@ -1,5 +1,5 @@
 from pylixir.core.base import RNG, GameState, Mutation, MutationTarget
-from pylixir.council.base import ElixirLogic
+from pylixir.core.council import ElixirLogic
 
 
 class TargetSizeMismatchException(Exception):

@@ -1,7 +1,7 @@
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.council.logic import DecreaseTurnLeft
+from pylixir.data.council.logic import DecreaseTurnLeft
 
 
 @pytest.mark.parametrize("turn_count", [1, 2])

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from pylixir.core.base import RNG, GameState
-from pylixir.council.base import CouncilTargetType, TargetSelector
+from pylixir.core.council import CouncilTargetType, TargetSelector
 
 
 class InvalidSelectionException(Exception):

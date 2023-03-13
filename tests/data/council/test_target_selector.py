@@ -1,8 +1,8 @@
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.council.base import CouncilTargetType
-from pylixir.council.target import (
+from pylixir.core.council import CouncilTargetType
+from pylixir.data.council.target import (
     LteValueSelector,
     MaxValueSelector,
     MinValueSelector,

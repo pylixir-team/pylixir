@@ -1,12 +1,12 @@
 import pytest
 
 from pylixir.core.base import GameState, Mutation, MutationTarget
-from pylixir.council.logic import (
+from pylixir.data.council.logic import (
     MutateLuckyRatio,
     MutateProb,
     SetEnchantTargetAndAmount,
 )
-from tests.council.logic.util import assert_mutation_extended
+from tests.data.council.logic.util import assert_mutation_extended
 
 
 @pytest.mark.parametrize("random_number", [0, 0.3, 1.0])

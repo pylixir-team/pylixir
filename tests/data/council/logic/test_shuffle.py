@@ -1,7 +1,7 @@
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.council.logic import ShuffleAll
+from pylixir.data.council.logic import ShuffleAll
 
 # Each test will run this with random number(seed) 1~100
 

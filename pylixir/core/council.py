@@ -4,7 +4,7 @@ from typing import Optional
 
 import pydantic
 
-from pylixir.core.base import Decision, GameState
+from pylixir.core.base import GameState
 
 """
 class CouncilLogicType(enum.Enum):
@@ -83,13 +83,10 @@ class Council(pydantic.BaseModel):
     logic: ElixirLogic
     target_selector: TargetSelector
 
-    def get_targets(self, state: GameState, decision: Decision):
-        ...
-
 
 class CouncilRepository:
     def get_council(self, council_id: str) -> Council:
         ...
 
-    def sample(self, state) -> tuple[Council, Council, Council]:
+    def sample(self, state: GameState) -> tuple[str, str, str]:
         ...
