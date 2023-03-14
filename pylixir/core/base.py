@@ -27,33 +27,6 @@ class Mutation(pydantic.BaseModel):
     remain_turn: int
 
 
-class SageType(enum.Enum):
-    none = "none"
-    lawful = "lawful"
-    chaos = "chaos"
-
-
-class Sage(pydantic.BaseModel):
-    power: int
-    is_removed: bool
-
-    @property
-    def type(self) -> SageType:
-        if self.power == 0:
-            return SageType.none
-
-        if self.power > 0:
-            return SageType.lawful
-
-        return SageType.chaos
-
-    def run(self) -> None:
-        ...
-
-    def update_power(self, selected: bool) -> None:
-        ...
-
-
 class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
     name: str
     value: int
@@ -122,7 +95,7 @@ class Enchanter(pydantic.BaseModel):
     size: int = 5
     turn_left: int = 13
 
-    def enchant(self, locked: list[int], random_number: float) -> None:
+    def enchant(self, locked: list[int], random_number: float) -> list[int]:
         rng = RNG(random_number)
         random_numbers = [
             (rng.sample(), rng.sample()) for _ in range(self.get_enchant_effect_count())
@@ -267,10 +240,10 @@ class GameState(pydantic.BaseModel):
     reroll_left: int
     board: Board
     enchanter: Enchanter = pydantic.Field(default_factory=Enchanter)
-    sages: tuple[Sage, Sage, Sage]
 
     class Config:
         arbitrary_types_allowed = True
+        extra = "forbid"
 
     def deepcopy(self) -> GameState:
         return self.copy(deep=True)
@@ -316,7 +289,7 @@ class RNG:
             raise ValueError("Summation of probability cannot be 0")
 
         pivot = random_number * sum(probs)
-        cum_prob = 0
+        cum_prob = 0.0
 
         for idx, prob in enumerate(probs):
             cum_prob += prob

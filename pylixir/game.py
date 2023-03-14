@@ -1,30 +1,38 @@
-import pydantic
-
 from pylixir.core.base import RNG, Decision, GameState
-from pylixir.core.council import Council, CouncilRepository
+from pylixir.core.council import SageCommittee
 
 
-class Client(pydantic.BaseModel):
+class Client:
     def __init__(
         self,
-        council_repository: CouncilRepository,
+        state: GameState,
+        committee: SageCommittee,
         rng: RNG,
     ):
-        self._council_repository = council_repository
+        self._state = state
+        self._committee = committee
         self._rng = rng
 
-    def run(self, state: GameState, decision: Decision) -> GameState:
-        # council_id = state.council_ids[decision.sage_index]
-        # council = self._council_repository.get_council(council_id)
+    def run(
+        self, state: GameState, committee: SageCommittee, decision: Decision
+    ) -> GameState:
+        council = committee.get_council(decision.sage_index)
 
         targets = council.target_selector.select_targets(
             state, decision.effect_index, self.step_rng()
         )
         new_state = council.logic.reduce(state, targets, self.step_rng())
 
-        new_state.enchant(self._rng.sample())
+        enchanted_result = new_state.enchanter.enchant(
+            state.board.locked_indices(), self._rng.sample()
+        )
+        for idx, amount in enumerate(enchanted_result):
+            new_state.board.modify_effect_count(idx, amount)
 
-        # new_state.replace_council_ids(self._council_repository.sample(new_state))
+        # council_id = state.council_ids[decision.sage_index]
+        # council = self._council_repository.get_council(council_id)
+
+        committee.pick(decision.sage_index)
 
         return new_state
 

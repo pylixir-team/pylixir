@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import Board, Effect, GamePhase, GameState, Sage
+from pylixir.core.base import Board, Effect, GamePhase, GameState
 
 
 @pytest.fixture
@@ -18,11 +18,6 @@ def clean_state() -> GameState:
             ],
             mutations=[],
         ),
-        sages=[
-            Sage(power=0, is_removed=False),
-            Sage(power=0, is_removed=False),
-            Sage(power=0, is_removed=False),
-        ],
     )
 
 
@@ -41,9 +36,4 @@ def abundant_state() -> GameState:
             ],
             mutations=[],
         ),
-        sages=[
-            Sage(power=1, is_removed=False),
-            Sage(power=1, is_removed=False),
-            Sage(power=1, is_removed=False),
-        ],
     )

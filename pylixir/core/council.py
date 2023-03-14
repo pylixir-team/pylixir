@@ -6,38 +6,32 @@ import pydantic
 
 from pylixir.core.base import GameState
 
-"""
-class CouncilLogicType(enum.Enum):
-  | "mutateProb" // 1
-  | "mutateLuckyRatio" // 2
-  | "increaseTargetWithRatio" // 3
-  | "increaseTargetRanged" // 4
-  | "decreaseTurnLeft" // 5
-  | "shuffleAll" // 6
-  | "setEnchantTargetAndAmount" // 7
-  | "unlockAndLockOther" // 8
-  | "changeEffect" // 9
-  | "lockTarget" // 10
-  | "increaseReroll" // 11
-  | "decreasePrice" // 12
-  | "restart" // 13
-  | "setEnchantIncreaseAmount" // 14
-  | "setEnchantEffectCount" // 15
-  | "setValueRanged" // 16
-  | "redistributeAll" // 17
-  | "redistributeSelectedToOthers" // 18
-  | "shiftAll" // 19
-  | "swapValues" // 20
-  | "swapMinMax" // 23
-  | "exhaust" // 24
-  | "increaseMaxAndDecreaseTarget" // 25
-  | "increaseMinAndDecreaseTarget" // 26
-  | "redistributeMinToOthers" // 27
-  | "redistributeMaxToOthers" // 28
-  | "decreaseMaxAndSwapMinMax" // 29
-  | "decreaseFirstTargetAndSwap"; // 30
 
-"""
+class SageType(enum.Enum):
+    none = "none"
+    lawful = "lawful"
+    chaos = "chaos"
+
+
+class Sage(pydantic.BaseModel):
+    power: int
+    is_removed: bool
+
+    @property
+    def type(self) -> SageType:
+        if self.power == 0:
+            return SageType.none
+
+        if self.power > 0:
+            return SageType.lawful
+
+        return SageType.chaos
+
+    def run(self) -> None:
+        ...
+
+    def update_power(self, selected: bool) -> None:
+        ...
 
 
 class CouncilTargetType(enum.Enum):
@@ -82,6 +76,21 @@ class Council(pydantic.BaseModel):
     id: str
     logic: ElixirLogic
     target_selector: TargetSelector
+
+
+class SageCommittee(pydantic.BaseModel):
+    sages: tuple[Sage, Sage, Sage]
+    councils: tuple[Optional[Council], Optional[Council], Optional[Council]]
+
+    def pick(self, sage_index: int) -> None:
+        ...
+
+    def get_council(self, sage_index: int) -> Council:
+        maybe_council = self.councils[sage_index]
+        if maybe_council is None:
+            raise IndexError
+
+        return maybe_council
 
 
 class CouncilRepository:
