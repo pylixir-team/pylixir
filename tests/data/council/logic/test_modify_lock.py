@@ -10,7 +10,7 @@ def test_unlock_and_lock_other(
     locked_indices: list[int], abundant_state: GameState
 ) -> None:
     for idx in locked_indices:
-        abundant_state.effect_board.lock(idx)
+        abundant_state.board.lock(idx)
 
     total_run_count = 100
 
@@ -24,7 +24,7 @@ def test_unlock_and_lock_other(
 
     for random_number in range(total_run_count):
         changed_state = logic.reduce(abundant_state, [], random_number)
-        changed_locks = changed_state.effect_board.locked_indices()
+        changed_locks = changed_state.board.locked_indices()
 
         if len(changed_locks) != len(locked_indices):  # check lock count preserved
             continue
@@ -53,4 +53,4 @@ def test_lock_target(abundant_state: GameState) -> None:
 
     changed_state = logic.reduce(abundant_state, [target_index], 3456)
 
-    assert changed_state.effect_board.get(target_index).locked
+    assert changed_state.board.get(target_index).locked

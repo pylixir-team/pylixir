@@ -13,4 +13,7 @@ def test_increase_target_with_ratio(turn_count: int, abundant_state: GameState) 
     )
 
     changed_state = logic.reduce(abundant_state, [], 2345)
-    assert changed_state.turn_left == abundant_state.turn_left - turn_count
+    assert (
+        changed_state.enchanter.turn_left
+        == abundant_state.enchanter.turn_left - turn_count
+    )

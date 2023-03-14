@@ -23,7 +23,7 @@ class RandomSelector(TargetSelector):
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
-        mutable_indices = state.effect_board.mutable_indices()
+        mutable_indices = state.board.mutable_indices()
 
         return RNG(random_number).shuffle(mutable_indices)[: self.count]
 
@@ -49,15 +49,13 @@ class MinValueSelector(TargetSelector):
         if self.target_condition != 0:
             raise InvalidSelectionException("Invalid proposed selector")
 
-        availabla_indices = state.effect_board.mutable_indices()
-        minimum_value = min(
-            [state.effect_board.get(idx).value for idx in availabla_indices]
-        )
+        availabla_indices = state.board.mutable_indices()
+        minimum_value = min([state.board.get(idx).value for idx in availabla_indices])
 
         candidates = [
             idx
             for idx in availabla_indices
-            if state.effect_board.get(idx).value == minimum_value
+            if state.board.get(idx).value == minimum_value
         ]  # since tatget_condition starts with 1
         return RNG(random_number).shuffle(candidates)[: self.count]
 
@@ -71,15 +69,13 @@ class MaxValueSelector(TargetSelector):
         if self.target_condition != 0:
             raise InvalidSelectionException("Invalid proposed selector")
 
-        availabla_indices = state.effect_board.mutable_indices()
-        minimum_value = max(
-            [state.effect_board.get(idx).value for idx in availabla_indices]
-        )
+        availabla_indices = state.board.mutable_indices()
+        minimum_value = max([state.board.get(idx).value for idx in availabla_indices])
 
         candidates = [
             idx
             for idx in availabla_indices
-            if state.effect_board.get(idx).value == minimum_value
+            if state.board.get(idx).value == minimum_value
         ]  # since tatget_condition starts with 1
         return RNG(random_number).shuffle(candidates)[: self.count]
 
@@ -102,12 +98,12 @@ class LteValueSelector(TargetSelector):
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
-        availabla_indices = state.effect_board.mutable_indices()
+        availabla_indices = state.board.mutable_indices()
 
         return [
             idx
             for idx in availabla_indices
-            if state.effect_board.get(idx).value <= self.target_condition
+            if state.board.get(idx).value <= self.target_condition
         ]
 
 

@@ -15,10 +15,10 @@ from tests.data.council.logic.util import assert_effect_changed
 @pytest.mark.parametrize(
     "ratio, random_number, success",
     [
-        (1500, 3500, False),
-        (3500, 2000, True),
-        (10000, 9999.999999, True),
-        (2500, 2500.1, False),
+        (1500, 0.35, False),
+        (3500, 0.20, True),
+        (10000, 0.999999, True),
+        (2500, 0.25001, False),
     ],
 )
 def test_increase_target_with_ratio(
@@ -41,13 +41,13 @@ def test_increase_target_with_ratio(
 @pytest.mark.parametrize(
     "value_range, random_number, amount",
     [
-        ((1, 2), 2500, 1),
-        ((1, 2), 7500, 2),
-        ((0, 2), 2500, 0),
-        ((0, 2), 6000, 1),
-        ((-2, 2), 5000, 0),
-        ((-2, 2), 9200, 2),
-        ((-2, 2), 2100, -1),
+        ((1, 2), 0.2500, 1),
+        ((1, 2), 0.7500, 2),
+        ((0, 2), 0.2500, 0),
+        ((0, 2), 0.6000, 1),
+        ((-2, 2), 0.5000, 0),
+        ((-2, 2), 0.9200, 2),
+        ((-2, 2), 0.2100, -1),
     ],
 )
 def test_increase_target_ranged(

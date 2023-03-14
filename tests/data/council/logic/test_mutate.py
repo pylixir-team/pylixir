@@ -6,7 +6,6 @@ from pylixir.data.council.logic import (
     MutateProb,
     SetEnchantTargetAndAmount,
 )
-from tests.data.council.logic.util import assert_mutation_extended
 
 
 @pytest.mark.parametrize("random_number", [0, 0.3, 1.0])
@@ -26,7 +25,10 @@ def test_mutate_prob(
         for index in indices
     ]
 
-    assert_mutation_extended(abundant_state, changed_state, expected_mutations)
+    for mutation in expected_mutations:
+        abundant_state.enchanter.apply_mutation(mutation)
+
+    assert abundant_state == changed_state
 
 
 @pytest.mark.parametrize("random_number", [0, 0.3, 1.0])
@@ -47,12 +49,14 @@ def test_mutate_lucky_ratio(
         )
         for index in indices
     ]
+    for mutation in expected_mutations:
+        abundant_state.enchanter.apply_mutation(mutation)
 
-    assert_mutation_extended(abundant_state, changed_state, expected_mutations)
+    assert abundant_state == changed_state
 
 
 @pytest.mark.parametrize("random_number", [0, 0.3, 1.0])
-@pytest.mark.parametrize("indices", [[1], [2, 4], [3]])
+@pytest.mark.parametrize("indices", [[1], [2], [3]])
 def test_enchant_target_and_amount(
     random_number: float, indices: list[int], abundant_state: GameState
 ) -> None:
@@ -68,7 +72,7 @@ def test_enchant_target_and_amount(
         [
             [
                 Mutation(
-                    target=MutationTarget.prob, index=index, value=10000, remain_turn=1
+                    target=MutationTarget.prob, index=index, value=1.0, remain_turn=1
                 ),
                 Mutation(
                     target=MutationTarget.enchant_increase_amount,
@@ -83,6 +87,6 @@ def test_enchant_target_and_amount(
     )
 
     for mutation in expected_mutations:
-        abundant_state.add_mutation(mutation)
+        abundant_state.enchanter.apply_mutation(mutation)
 
     assert abundant_state == changed_state

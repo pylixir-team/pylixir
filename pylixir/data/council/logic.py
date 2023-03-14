@@ -1,4 +1,4 @@
-from pylixir.core.base import RNG, GameState, Mutation, MutationTarget
+from pylixir.core.base import RNG, GameState
 from pylixir.core.council import ElixirLogic
 
 
@@ -14,17 +14,9 @@ class MutateProb(ElixirLogic):
     ) -> GameState:
         state = state.deepcopy()
 
-        mutations = [
-            Mutation(
-                target=MutationTarget.prob,
-                index=index,
-                value=self.value[0],
-                remain_turn=self.remain_turn,
-            )
-            for index in targets
-        ]
+        for index in targets:
+            state.enchanter.mutate_prob(index, self.value[0], self.remain_turn)
 
-        state.mutations += mutations
         return state
 
 
@@ -36,17 +28,9 @@ class MutateLuckyRatio(ElixirLogic):
     ) -> GameState:
         state = state.deepcopy()
 
-        mutations = [
-            Mutation(
-                target=MutationTarget.lucky_ratio,
-                index=index,
-                value=self.value[0],
-                remain_turn=self.remain_turn,
-            )
-            for index in targets
-        ]
+        for index in targets:
+            state.enchanter.mutate_lucky_ratio(index, self.value[0], self.remain_turn)
 
-        state.mutations += mutations
         return state
 
 
@@ -62,8 +46,8 @@ class IncreaseTargetWithRatio(ElixirLogic):
         target = targets[0]
         state = state.deepcopy()
 
-        if random_number <= self.ratio:
-            state.effect_board.modify_effect_count(target, self.value[0])
+        if random_number <= self.ratio / 10000:
+            state.board.modify_effect_count(target, self.value[0])
 
         return state
 
@@ -83,7 +67,7 @@ class IncreaseTargetRanged(ElixirLogic):
         diff_min, diff_max = self.value
         diff = RNG.ranged(diff_min, diff_max, random_number)
 
-        state.effect_board.modify_effect_count(target, diff)
+        state.board.modify_effect_count(target, diff)
 
         return state
 
@@ -95,7 +79,7 @@ class DecreaseTurnLeft(ElixirLogic):
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
         state = state.deepcopy()
-        state.consume_turn(self.value[0])
+        state.enchanter.consume_turn(self.value[0])
 
         return state
 
@@ -108,9 +92,9 @@ class ShuffleAll(ElixirLogic):
     ) -> GameState:
         state = state.deepcopy()
 
-        original_values = state.effect_board.get_effect_values()
-        unlocked_indices = state.effect_board.unlocked_indices()
-        locked_indices = state.effect_board.locked_indices()
+        original_values = state.board.get_effect_values()
+        unlocked_indices = state.board.unlocked_indices()
+        locked_indices = state.board.locked_indices()
 
         starting = unlocked_indices + locked_indices
 
@@ -118,7 +102,7 @@ class ShuffleAll(ElixirLogic):
         ending = shuffled_indices + locked_indices
 
         for start, end in zip(starting, ending):
-            state.effect_board.set_effect_count(start, original_values[end])
+            state.board.set_effect_count(start, original_values[end])
 
         return state
 
@@ -129,28 +113,14 @@ class SetEnchantTargetAndAmount(ElixirLogic):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
-        state = state.deepcopy()
-        mutations = []
-        for target in targets:
-            mutations.extend(
-                [
-                    Mutation(
-                        target=MutationTarget.prob,
-                        index=target,
-                        value=10000,
-                        remain_turn=self.remain_turn,
-                    ),
-                    Mutation(
-                        target=MutationTarget.enchant_increase_amount,
-                        index=-1,
-                        value=self.value[0],
-                        remain_turn=self.remain_turn,
-                    ),
-                ]
-            )
+        if len(targets) != 1:
+            raise TargetSizeMismatchException
 
-        for mutation in mutations:
-            state.add_mutation(mutation)
+        state = state.deepcopy()
+        target = targets[0]
+
+        state.enchanter.mutate_prob(target, 1.0, self.remain_turn)
+        state.enchanter.increase_enchant_amount(self.value[0])
 
         return state
 
@@ -165,11 +135,11 @@ class UnlockAndLockOther(ElixirLogic):
 
         rng = RNG(random_number)
 
-        will_unlock = rng.fork().pick(state.effect_board.locked_indices())
-        will_lock = rng.fork().pick(state.effect_board.unlocked_indices())
+        will_unlock = rng.fork().pick(state.board.locked_indices())
+        will_lock = rng.fork().pick(state.board.unlocked_indices())
 
-        state.effect_board.lock(will_lock)
-        state.effect_board.unlock(will_unlock)
+        state.board.lock(will_lock)
+        state.board.unlock(will_unlock)
 
         return state
 
@@ -196,7 +166,7 @@ class LockTarget(ElixirLogic):
         state = state.deepcopy()
         target = targets[0]
 
-        state.effect_board.lock(target)
+        state.board.lock(target)
 
         return state
 

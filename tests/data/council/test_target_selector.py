@@ -1,7 +1,6 @@
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.core.council import CouncilTargetType
 from pylixir.data.council.target import (
     LteValueSelector,
     MaxValueSelector,
@@ -108,7 +107,7 @@ def test_one_three_five(abundant_state: GameState) -> None:
     assert selector.select_targets(abundant_state, None, any_random_number) == [0, 2, 4]
 
 
-def test_one_three_five(abundant_state: GameState) -> None:
+def test_two_four(abundant_state: GameState) -> None:
     any_random_number = 42
     selector = TwoFourSelector(
         target_condition=0,
