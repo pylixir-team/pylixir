@@ -242,7 +242,6 @@ class SetValueRanged(AlwaysValidOperation):
         return state
 
 
-
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,

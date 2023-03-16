@@ -7,6 +7,7 @@ from pylixir.core.council import ElixirOperation
 from pylixir.data.council.operation import (
     IncreaseTargetRanged,
     IncreaseTargetWithRatio,
+    SetValueRanged,
     TargetSizeMismatchException,
 )
 from tests.data.council.util import assert_effect_changed
@@ -93,3 +94,39 @@ def test_increase_target_with_ratio_reject_multiple_target(
             value=(1, 0),
             remain_turn=1,
         ).reduce(abundant_state, [2, 3], DeterministicRandomness(0.2345))
+
+
+
+
+
+
+@pytest.mark.parametrize(
+    "value_range, random_number, amount",
+    [
+        ((1, 2), 0.2500, 1),
+        ((1, 2), 0.7500, 2),
+        ((3, 4), 0.2500, 3),
+        ((3, 4), 0.6000, 4),
+        ((5, 6), 0.5000, 6),
+        ((5, 6), 0.9200, 6),
+        ((5, 6), 0.2100, 5),
+    ],
+)
+def test_set_value_ranged(
+    value_range: tuple[int, int],
+    random_number: float,
+    amount: int,
+    abundant_state: GameState,
+) -> None:
+    target_index = 0
+    operation = SetValueRanged(
+        ratio=0,
+        value=value_range,
+        remain_turn=1,
+    )
+
+    changed_state = operation.reduce(
+        abundant_state, [target_index], DeterministicRandomness(random_number)
+    )
+
+    assert changed_state.board.get_effect_values()[target_index] == amount
