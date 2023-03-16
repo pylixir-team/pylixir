@@ -12,6 +12,7 @@ from pylixir.data.council.target import (
     TwoFourSelector,
     UserSelector,
 )
+from tests.randomness import DeterministicRandomness
 
 
 @pytest.mark.parametrize("effect_index", [None, 1, 3, 4])
@@ -21,7 +22,9 @@ def test_none_selector(effect_index: int, abundant_state: GameState) -> None:
         target_condition=0,
         count=0,
     )
-    assert not selector.select_targets(abundant_state, effect_index, any_random_number)
+    assert not selector.select_targets(
+        abundant_state, effect_index, DeterministicRandomness(any_random_number)
+    )
 
 
 def test_random_selector(abundant_state: GameState) -> None:
@@ -31,7 +34,9 @@ def test_random_selector(abundant_state: GameState) -> None:
             target_condition=0,
             count=count,
         )
-        selected = selector.select_targets(abundant_state, None, random_number)
+        selected = selector.select_targets(
+            abundant_state, None, DeterministicRandomness(random_number)
+        )
         assert count == len(selected)
 
 
@@ -43,7 +48,9 @@ def test_proposed_selector(target_condition: int, abundant_state: GameState) -> 
         count=1,
     )
 
-    selected = selector.select_targets(abundant_state, None, any_random_number)
+    selected = selector.select_targets(
+        abundant_state, None, DeterministicRandomness(any_random_number)
+    )
     assert selected == [target_condition - 1]
 
 
@@ -54,7 +61,9 @@ def test_minimum_selector(abundant_state: GameState) -> None:
             count=1,
         )
 
-        result = selector.select_targets(abundant_state, None, random_number)
+        result = selector.select_targets(
+            abundant_state, None, DeterministicRandomness(random_number)
+        )
         assert result in ([3], [4])
 
 
@@ -65,7 +74,9 @@ def test_maximum_selector(abundant_state: GameState) -> None:
             count=1,
         )
 
-        result = selector.select_targets(abundant_state, None, random_number)
+        result = selector.select_targets(
+            abundant_state, None, DeterministicRandomness(random_number)
+        )
         assert result in ([0], [1])
 
 
@@ -76,9 +87,9 @@ def test_user_selector(effect_index: int, abundant_state: GameState) -> None:
         target_condition=0,
         count=0,
     )
-    assert selector.select_targets(abundant_state, effect_index, any_random_number) == [
-        effect_index
-    ]
+    assert selector.select_targets(
+        abundant_state, effect_index, DeterministicRandomness(any_random_number)
+    ) == [effect_index]
 
 
 @pytest.mark.parametrize(
@@ -94,7 +105,9 @@ def test_lte_selector(
         count=1,
     )
 
-    selected = selector.select_targets(abundant_state, None, any_random_number)
+    selected = selector.select_targets(
+        abundant_state, None, DeterministicRandomness(any_random_number)
+    )
     assert expected == selected
 
 
@@ -104,7 +117,9 @@ def test_one_three_five(abundant_state: GameState) -> None:
         target_condition=0,
         count=0,
     )
-    assert selector.select_targets(abundant_state, None, any_random_number) == [0, 2, 4]
+    assert selector.select_targets(
+        abundant_state, None, DeterministicRandomness(any_random_number)
+    ) == [0, 2, 4]
 
 
 def test_two_four(abundant_state: GameState) -> None:
@@ -113,7 +128,9 @@ def test_two_four(abundant_state: GameState) -> None:
         target_condition=0,
         count=0,
     )
-    assert selector.select_targets(abundant_state, None, any_random_number) == [1, 3]
+    assert selector.select_targets(
+        abundant_state, None, DeterministicRandomness(any_random_number)
+    ) == [1, 3]
 
 
 @pytest.mark.parametrize(

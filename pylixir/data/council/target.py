@@ -1,7 +1,7 @@
 import enum
 from typing import Optional, Type
 
-from pylixir.core.base import RNG, GameState
+from pylixir.core.base import GameState, Randomness
 from pylixir.core.council import TargetSelector
 
 
@@ -11,7 +11,7 @@ class InvalidSelectionException(Exception):
 
 class NoneSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         return []
 
@@ -21,11 +21,11 @@ class NoneSelector(TargetSelector):
 
 class RandomSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         mutable_indices = state.board.mutable_indices()
 
-        return RNG(random_number).shuffle(mutable_indices)[: self.count]
+        return randomness.shuffle(mutable_indices)[: self.count]
 
     def is_valid(self, state: GameState) -> bool:
         return True
@@ -33,7 +33,7 @@ class RandomSelector(TargetSelector):
 
 class ProposedSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         if self.target_condition == 0:
             raise InvalidSelectionException("Invalid proposed selector")
@@ -50,7 +50,7 @@ class ProposedSelector(TargetSelector):
 
 class MinValueSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         if self.target_condition != 0:
             raise InvalidSelectionException("Invalid proposed selector")
@@ -63,7 +63,7 @@ class MinValueSelector(TargetSelector):
             for idx in availabla_indices
             if state.board.get(idx).value == minimum_value
         ]  # since tatget_condition starts with 1
-        return RNG(random_number).shuffle(candidates)[: self.count]
+        return randomness.shuffle(candidates)[: self.count]
 
     def is_valid(self, state: GameState) -> bool:
         return True
@@ -71,7 +71,7 @@ class MinValueSelector(TargetSelector):
 
 class MaxValueSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         if self.target_condition != 0:
             raise InvalidSelectionException("Invalid proposed selector")
@@ -84,7 +84,7 @@ class MaxValueSelector(TargetSelector):
             for idx in availabla_indices
             if state.board.get(idx).value == minimum_value
         ]  # since tatget_condition starts with 1
-        return RNG(random_number).shuffle(candidates)[: self.count]
+        return randomness.shuffle(candidates)[: self.count]
 
     def is_valid(self, state: GameState) -> bool:
         return True
@@ -92,7 +92,7 @@ class MaxValueSelector(TargetSelector):
 
 class UserSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         if effect_index is None:
             raise InvalidSelectionException("User Selector requires effect_index")
@@ -105,7 +105,7 @@ class UserSelector(TargetSelector):
 
 class LteValueSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         availabla_indices = state.board.mutable_indices()
 
@@ -121,7 +121,7 @@ class LteValueSelector(TargetSelector):
 
 class OneThreeFiveSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         return [0, 2, 4]
 
@@ -131,7 +131,7 @@ class OneThreeFiveSelector(TargetSelector):
 
 class TwoFourSelector(TargetSelector):
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         return [1, 3]
 

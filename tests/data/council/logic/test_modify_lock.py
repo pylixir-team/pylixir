@@ -2,6 +2,7 @@ import pytest
 
 from pylixir.core.base import GameState
 from pylixir.data.council.operation import LockTarget, UnlockAndLockOther
+from tests.randomness import DeterministicRandomness
 
 
 # Each test will run this with random number(seed) 1~100
@@ -23,7 +24,9 @@ def test_unlock_and_lock_other(
     correct_count = 0
 
     for random_number in range(total_run_count):
-        changed_state = operation.reduce(abundant_state, [], random_number)
+        changed_state = operation.reduce(
+            abundant_state, [], DeterministicRandomness(random_number)
+        )
         changed_locks = changed_state.board.locked_indices()
 
         if len(changed_locks) != len(locked_indices):  # check lock count preserved
@@ -51,6 +54,8 @@ def test_lock_target(abundant_state: GameState) -> None:
         remain_turn=1,
     )
 
-    changed_state = operation.reduce(abundant_state, [target_index], 3456)
+    changed_state = operation.reduce(
+        abundant_state, [target_index], DeterministicRandomness(3456)
+    )
 
     assert changed_state.board.get(target_index).locked

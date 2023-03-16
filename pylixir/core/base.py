@@ -2,10 +2,33 @@ from __future__ import annotations
 
 import abc
 import enum
-from random import Random
 from typing import Optional
 
 import pydantic
+
+MAX_TURN_COUNT = 13
+
+
+class Randomness(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def binomial(self, prob: float) -> bool:
+        ...
+
+    @abc.abstractmethod
+    def uniform_int(self, min_range: int, max_range: int) -> int:
+        ...
+
+    @abc.abstractmethod
+    def shuffle(self, values: list[int]) -> list[int]:
+        ...
+
+    @abc.abstractmethod
+    def pick(self, values: list[int]) -> int:
+        ...
+
+    @abc.abstractmethod
+    def weighted_sampling(self, probs: list[float]) -> int:
+        ...
 
 
 class Decision(pydantic.BaseModel):  # UIState
@@ -93,41 +116,34 @@ class Board(pydantic.BaseModel):
 class Enchanter(pydantic.BaseModel):
     _mutations: list[Mutation] = pydantic.PrivateAttr(default_factory=list)
     size: int = 5
-    turn_left: int = 13
+    turn_left: int = MAX_TURN_COUNT
+    total_turn: int = MAX_TURN_COUNT
 
-    def enchant(self, locked: list[int], random_number: float) -> list[int]:
-        rng = RNG(random_number)
-        random_numbers = [
-            (rng.sample(), rng.sample()) for _ in range(self.get_enchant_effect_count())
-        ]
-        return self.expectable_enchant(
+    def enchant(self, locked: list[int], randomness: Randomness) -> list[int]:
+        return self.get_enchant_result(
             self.query_enchant_prob(locked),
             self.query_lucky_ratio(),
             self.get_enchant_effect_count(),
             self.get_enchant_amount(),
-            random_numbers,
+            randomness,
         )
 
-    def expectable_enchant(
+    def get_enchant_result(
         self,
         prob: list[float],
         lucky_ratio: list[float],
         count: int,
         amount: int,
-        enchant_random_numbers: list[tuple[float, float]],
+        randomness: Randomness,
     ) -> list[int]:
-        """명확한 랜덤 값을 사용하여 인챈트합니다.
-        This is testable enchant function.
-        """
         masked_prob = list(prob)
         result = [0 for _ in range(self.size)]
-        assert count == len(enchant_random_numbers)
 
-        for sampling_random_number, lucky_random_number in enchant_random_numbers:
-            target_index = RNG.weighted_sampling(masked_prob, sampling_random_number)
+        for _ in range(count):
+            target_index = randomness.weighted_sampling(masked_prob)
             # add result as amount
             result[target_index] += amount
-            if lucky_random_number < lucky_ratio[target_index]:
+            if randomness.binomial(lucky_ratio[target_index]):
                 result[target_index] += 1
 
             # pick and prevent duplicated sampling
@@ -234,6 +250,9 @@ class Enchanter(pydantic.BaseModel):
     def consume_turn(self, count: int) -> None:
         self.turn_left -= count
 
+    def get_current_turn(self) -> int:
+        return self.total_turn - self.turn_left
+
 
 class GameState(pydantic.BaseModel):
     phase: GamePhase
@@ -256,60 +275,3 @@ class GameState(pydantic.BaseModel):
         required_locks = 3 - locked_effect_count
 
         return self.enchanter.turn_left <= required_locks
-
-
-class RNG:
-    def __init__(self, start_seed: float):
-        self._seed = start_seed
-
-    def sample(self) -> float:
-        sampled = self.chained_sample(self._seed)
-        self._seed = sampled
-
-        return sampled
-
-    def fork(self) -> RNG:
-        """
-        fork to New RNG.
-        fork will create new RNG, with modifiing self's seed.
-        this is not idempotent; consequtive fork may yield different RNG.
-        """
-        forked_random_number_generator = RNG(self._seed + 1)
-        self._seed += 1
-        self.sample()
-
-        return forked_random_number_generator
-
-    @classmethod
-    def chained_sample(cls, random_number: float) -> float:
-        return Random(random_number).random()
-
-    @classmethod
-    def ranged(cls, min_range: int, max_range: int, random_number: float) -> int:
-        bin_size = max_range - min_range + 1
-        return int(random_number * bin_size) + min_range
-
-    @classmethod
-    def weighted_sampling(cls, probs: list[float], random_number: float) -> int:
-        if sum(probs) == 0:
-            raise ValueError("Summation of probability cannot be 0")
-
-        pivot = random_number * sum(probs)
-        cum_prob = 0.0
-
-        for idx, prob in enumerate(probs):
-            cum_prob += prob
-
-            if cum_prob >= pivot and prob != 0:
-                return idx
-
-        raise ValueError("random_number cannot be 1")
-
-    def shuffle(self, values: list[int]) -> list[int]:
-        result = list(values)
-        Random(self.sample()).shuffle(result)
-        return result
-
-    def pick(self, values: list[int]) -> int:
-        shuffled = self.shuffle(values)
-        return shuffled[0]
