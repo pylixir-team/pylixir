@@ -114,3 +114,24 @@ def test_two_four(abundant_state: GameState) -> None:
         count=0,
     )
     assert selector.select_targets(abundant_state, None, any_random_number) == [1, 3]
+
+
+@pytest.mark.parametrize(
+    "locked_condition, valid",
+    [
+        (0, True),
+        (2, True),
+        (3, False),
+        (4, True),
+    ],
+)
+def test_proposed_selector_is_valid(
+    abundant_state: GameState, locked_condition: int, valid: bool
+) -> None:
+    abundant_state.board.lock(locked_condition)
+    selector = ProposedSelector(
+        target_condition=4,
+        count=1,
+    )
+
+    assert selector.is_valid(abundant_state) == valid

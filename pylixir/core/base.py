@@ -251,6 +251,12 @@ class GameState(pydantic.BaseModel):
     def modify_reroll(self, amount: int) -> None:
         self.reroll_left += amount
 
+    def requires_lock(self) -> bool:
+        locked_effect_count = len(self.board.locked_indices())
+        required_locks = 3 - locked_effect_count
+
+        return self.enchanter.turn_left <= required_locks
+
 
 class RNG:
     def __init__(self, start_seed: float):

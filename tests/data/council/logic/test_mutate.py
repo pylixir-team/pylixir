@@ -1,7 +1,7 @@
 import pytest
 
 from pylixir.core.base import GameState, Mutation, MutationTarget
-from pylixir.data.council.logic import (
+from pylixir.data.council.operation import (
     MutateLuckyRatio,
     MutateProb,
     SetEnchantTargetAndAmount,
@@ -13,13 +13,13 @@ from pylixir.data.council.logic import (
 def test_mutate_prob(
     random_number: float, indices: list[int], abundant_state: GameState
 ) -> None:
-    logic = MutateProb(
+    operation = MutateProb(
         ratio=0,
         value=(3500, 0),
         remain_turn=1,
     )
 
-    changed_state = logic.reduce(abundant_state, indices, random_number)
+    changed_state = operation.reduce(abundant_state, indices, random_number)
     expected_mutations = [
         Mutation(target=MutationTarget.prob, index=index, value=3500, remain_turn=1)
         for index in indices
@@ -36,13 +36,13 @@ def test_mutate_prob(
 def test_mutate_lucky_ratio(
     random_number: float, indices: list[int], abundant_state: GameState
 ) -> None:
-    logic = MutateLuckyRatio(
+    operation = MutateLuckyRatio(
         ratio=0,
         value=(3500, 0),
         remain_turn=1,
     )
 
-    changed_state = logic.reduce(abundant_state, indices, random_number)
+    changed_state = operation.reduce(abundant_state, indices, random_number)
     expected_mutations = [
         Mutation(
             target=MutationTarget.lucky_ratio, index=index, value=3500, remain_turn=1
@@ -61,13 +61,13 @@ def test_enchant_target_and_amount(
     random_number: float, indices: list[int], abundant_state: GameState
 ) -> None:
     amount = 2
-    logic = SetEnchantTargetAndAmount(
+    operation = SetEnchantTargetAndAmount(
         ratio=0,
         value=(amount, 0),
         remain_turn=1,
     )
 
-    changed_state = logic.reduce(abundant_state, indices, random_number)
+    changed_state = operation.reduce(abundant_state, indices, random_number)
     expected_mutations: list[Mutation] = sum(
         [
             [
