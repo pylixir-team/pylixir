@@ -53,6 +53,11 @@ class CouncilLoader:
         return Council(
             id=query.id,
             logics=[self._get_logic(logic_query) for logic_query in query.logics],
+            pickup_ratio=query.pickupRatio,
+            turn_range=query.range,
+            slot_type=query.slotType,
+            descriptions=query.descriptions,
+            type=query.type,
         )
 
     def _get_logic(self, logic_query: LogicQuery) -> Logic:

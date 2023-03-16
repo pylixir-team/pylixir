@@ -6,6 +6,7 @@ from pylixir.data.council.operation import (
     MutateProb,
     SetEnchantTargetAndAmount,
 )
+from tests.randomness import DeterministicRandomness
 
 
 @pytest.mark.parametrize("random_number", [0, 0.3, 1.0])
@@ -19,7 +20,9 @@ def test_mutate_prob(
         remain_turn=1,
     )
 
-    changed_state = operation.reduce(abundant_state, indices, random_number)
+    changed_state = operation.reduce(
+        abundant_state, indices, DeterministicRandomness(random_number)
+    )
     expected_mutations = [
         Mutation(target=MutationTarget.prob, index=index, value=3500, remain_turn=1)
         for index in indices
@@ -42,7 +45,9 @@ def test_mutate_lucky_ratio(
         remain_turn=1,
     )
 
-    changed_state = operation.reduce(abundant_state, indices, random_number)
+    changed_state = operation.reduce(
+        abundant_state, indices, DeterministicRandomness(random_number)
+    )
     expected_mutations = [
         Mutation(
             target=MutationTarget.lucky_ratio, index=index, value=3500, remain_turn=1
@@ -67,7 +72,9 @@ def test_enchant_target_and_amount(
         remain_turn=1,
     )
 
-    changed_state = operation.reduce(abundant_state, indices, random_number)
+    changed_state = operation.reduce(
+        abundant_state, indices, DeterministicRandomness(random_number)
+    )
     expected_mutations: list[Mutation] = sum(
         [
             [

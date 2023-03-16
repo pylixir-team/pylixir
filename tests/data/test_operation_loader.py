@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import GameState
+from pylixir.core.base import GameState, Randomness
 from pylixir.core.council import ElixirOperation
 from pylixir.data.loader import ElixirOperationLoader
 
@@ -10,7 +10,7 @@ class DummyOperationA(ElixirOperation):
         return True
 
     def reduce(
-        self, state: GameState, targets: list[int], random_number: float
+        self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
         return state.deepcopy()
 
@@ -20,7 +20,7 @@ class DummyOperationB(ElixirOperation):
         return True
 
     def reduce(
-        self, state: GameState, targets: list[int], random_number: float
+        self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
         return state.deepcopy()
 

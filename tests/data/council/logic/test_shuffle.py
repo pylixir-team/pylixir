@@ -2,6 +2,7 @@ import pytest
 
 from pylixir.core.base import GameState
 from pylixir.data.council.operation import ShuffleAll
+from tests.randomness import DeterministicRandomness
 
 # Each test will run this with random number(seed) 1~100
 
@@ -23,7 +24,9 @@ def test_shuffle(locked_indices: list[int], abundant_state: GameState) -> None:
     equal_count = 0
 
     for random_number in range(total_run_count):
-        changed_state = operation.reduce(abundant_state, [], random_number)
+        changed_state = operation.reduce(
+            abundant_state, [], DeterministicRandomness(random_number)
+        )
         changed_values = changed_state.board.get_effect_values()
         if set(changed_values) != set(original_values):
             continue

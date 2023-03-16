@@ -9,7 +9,8 @@ from pylixir.data.council.operation import (
     IncreaseTargetWithRatio,
     TargetSizeMismatchException,
 )
-from tests.data.council.logic.util import assert_effect_changed
+from tests.data.council.util import assert_effect_changed
+from tests.randomness import DeterministicRandomness
 
 
 @pytest.mark.parametrize(
@@ -32,7 +33,9 @@ def test_increase_target_with_ratio(
         remain_turn=1,
     )
 
-    changed_state = operation.reduce(abundant_state, [target_index], random_number)
+    changed_state = operation.reduce(
+        abundant_state, [target_index], DeterministicRandomness(random_number)
+    )
     assert_effect_changed(
         abundant_state, changed_state, target_index, amount if success else 0
     )
@@ -63,7 +66,9 @@ def test_increase_target_ranged(
         remain_turn=1,
     )
 
-    changed_state = operation.reduce(abundant_state, [target_index], random_number)
+    changed_state = operation.reduce(
+        abundant_state, [target_index], DeterministicRandomness(random_number)
+    )
     assert_effect_changed(
         abundant_state,
         changed_state,
@@ -87,4 +92,4 @@ def test_increase_target_with_ratio_reject_multiple_target(
             ratio=2500,
             value=(1, 0),
             remain_turn=1,
-        ).reduce(abundant_state, [2, 3], 2344)
+        ).reduce(abundant_state, [2, 3], DeterministicRandomness(0.2345))

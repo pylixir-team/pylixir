@@ -1,4 +1,4 @@
-from pylixir.core.base import RNG, Decision, GameState
+from pylixir.core.base import Decision, GameState, Randomness
 from pylixir.core.council import SageCommittee
 
 
@@ -7,11 +7,11 @@ class Client:
         self,
         state: GameState,
         committee: SageCommittee,
-        rng: RNG,
+        randomness: Randomness,
     ):
         self._state = state
         self._committee = committee
-        self._rng = rng
+        self._randomness = randomness
 
     def run(
         self, state: GameState, committee: SageCommittee, decision: Decision
@@ -19,10 +19,10 @@ class Client:
         council = committee.get_council(decision.sage_index)
 
         for logic in council.logics:
-            state = logic.apply(state, decision, self._rng)
+            state = logic.apply(state, decision, self._randomness)
 
         enchanted_result = state.enchanter.enchant(
-            state.board.locked_indices(), self._rng.sample()
+            state.board.locked_indices(), self._randomness
         )
         for idx, amount in enumerate(enchanted_result):
             state.board.modify_effect_count(idx, amount)
@@ -33,7 +33,3 @@ class Client:
         committee.pick(decision.sage_index)
 
         return state
-
-    def step_rng(self) -> float:
-        forked_rng = self._rng.fork()
-        return forked_rng.sample()

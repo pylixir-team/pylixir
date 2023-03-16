@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-from pylixir.core.base import GameState
+from pylixir.core.base import GameState, Randomness
 from pylixir.core.council import TargetSelector
 from pylixir.data.loader import ElixirTargetSelectorLoader
 
@@ -12,7 +12,7 @@ class DummySelectorA(TargetSelector):
         return True
 
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         return []
 
@@ -22,7 +22,7 @@ class DummySelectorB(TargetSelector):
         return True
 
     def select_targets(
-        self, state: GameState, effect_index: Optional[int], random_number: float
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
     ) -> list[int]:
         return []
 
