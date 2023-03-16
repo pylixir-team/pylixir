@@ -18,23 +18,21 @@ class Client:
     ) -> GameState:
         council = committee.get_council(decision.sage_index)
 
-        targets = council.target_selector.select_targets(
-            state, decision.effect_index, self.step_rng()
-        )
-        new_state = council.logic.reduce(state, targets, self.step_rng())
+        for logic in council.logics:
+            state = logic.apply(state, decision, self._rng)
 
-        enchanted_result = new_state.enchanter.enchant(
+        enchanted_result = state.enchanter.enchant(
             state.board.locked_indices(), self._rng.sample()
         )
         for idx, amount in enumerate(enchanted_result):
-            new_state.board.modify_effect_count(idx, amount)
+            state.board.modify_effect_count(idx, amount)
 
         # council_id = state.council_ids[decision.sage_index]
         # council = self._council_repository.get_council(council_id)
 
         committee.pick(decision.sage_index)
 
-        return new_state
+        return state
 
     def step_rng(self) -> float:
         forked_rng = self._rng.fork()

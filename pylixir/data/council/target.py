@@ -1,7 +1,8 @@
-from typing import Optional
+import enum
+from typing import Optional, Type
 
 from pylixir.core.base import RNG, GameState
-from pylixir.core.council import CouncilTargetType, TargetSelector
+from pylixir.core.council import TargetSelector
 
 
 class InvalidSelectionException(Exception):
@@ -9,17 +10,16 @@ class InvalidSelectionException(Exception):
 
 
 class NoneSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.none
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
         return []
 
+    def is_valid(self, state: GameState) -> bool:
+        return True
+
 
 class RandomSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.random
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
@@ -27,22 +27,28 @@ class RandomSelector(TargetSelector):
 
         return RNG(random_number).shuffle(mutable_indices)[: self.count]
 
+    def is_valid(self, state: GameState) -> bool:
+        return True
+
 
 class ProposedSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.proposed
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
         if self.target_condition == 0:
             raise InvalidSelectionException("Invalid proposed selector")
 
-        return [self.target_condition - 1]  # since tatget_condition starts with 1
+        return [self._target_index]  # since tatget_condition starts with 1
+
+    def is_valid(self, state: GameState) -> bool:
+        return self._target_index in state.board.mutable_indices()
+
+    @property
+    def _target_index(self) -> int:
+        return self.target_condition - 1
 
 
 class MinValueSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.minValue
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
@@ -59,10 +65,11 @@ class MinValueSelector(TargetSelector):
         ]  # since tatget_condition starts with 1
         return RNG(random_number).shuffle(candidates)[: self.count]
 
+    def is_valid(self, state: GameState) -> bool:
+        return True
+
 
 class MaxValueSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.maxValue
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
@@ -79,10 +86,11 @@ class MaxValueSelector(TargetSelector):
         ]  # since tatget_condition starts with 1
         return RNG(random_number).shuffle(candidates)[: self.count]
 
+    def is_valid(self, state: GameState) -> bool:
+        return True
+
 
 class UserSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.userSelect
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
@@ -91,10 +99,11 @@ class UserSelector(TargetSelector):
 
         return [effect_index]
 
+    def is_valid(self, state: GameState) -> bool:
+        return True
+
 
 class LteValueSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.lteValue
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
@@ -106,20 +115,51 @@ class LteValueSelector(TargetSelector):
             if state.board.get(idx).value <= self.target_condition
         ]
 
+    def is_valid(self, state: GameState) -> bool:
+        return True
+
 
 class OneThreeFiveSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.oneThreeFive
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
         return [0, 2, 4]
 
+    def is_valid(self, state: GameState) -> bool:
+        return True
+
 
 class TwoFourSelector(TargetSelector):
-    type: CouncilTargetType = CouncilTargetType.twoFour
-
     def select_targets(
         self, state: GameState, effect_index: Optional[int], random_number: float
     ) -> list[int]:
         return [1, 3]
+
+    def is_valid(self, state: GameState) -> bool:
+        return True
+
+
+class CouncilTargetType(enum.Enum):
+    none = "none"
+    random = "random"
+    proposed = "proposed"
+    maxValue = "maxValue"
+    minValue = "minValue"
+    userSelect = "userSelect"
+    lteValue = "lteValue"
+    oneThreeFive = "oneThreeFive"
+    twoFour = "twoFour"
+
+
+def get_target_classes() -> dict[str, Type[TargetSelector]]:
+    return {
+        CouncilTargetType.none.value: NoneSelector,
+        CouncilTargetType.random.value: RandomSelector,
+        CouncilTargetType.proposed.value: ProposedSelector,
+        CouncilTargetType.minValue.value: MinValueSelector,
+        CouncilTargetType.maxValue.value: MaxValueSelector,
+        CouncilTargetType.userSelect.value: UserSelector,
+        CouncilTargetType.lteValue.value: LteValueSelector,
+        CouncilTargetType.oneThreeFive.value: OneThreeFiveSelector,
+        CouncilTargetType.twoFour.value: TwoFourSelector,
+    }

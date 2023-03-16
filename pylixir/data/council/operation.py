@@ -1,14 +1,19 @@
+from typing import Type
+
 from pylixir.core.base import RNG, GameState
-from pylixir.core.council import ElixirLogic
+from pylixir.core.council import ElixirOperation
 
 
 class TargetSizeMismatchException(Exception):
     ...
 
 
-class MutateProb(ElixirLogic):
-    js_alias: str = "mutateProb"
+class AlwaysValidOperation(ElixirOperation):
+    def is_valid(self, state: GameState) -> bool:
+        return True
 
+
+class MutateProb(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -20,9 +25,7 @@ class MutateProb(ElixirLogic):
         return state
 
 
-class MutateLuckyRatio(ElixirLogic):
-    js_alias: str = "mutateLuckyRatio"
-
+class MutateLuckyRatio(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -34,9 +37,7 @@ class MutateLuckyRatio(ElixirLogic):
         return state
 
 
-class IncreaseTargetWithRatio(ElixirLogic):
-    js_alias: str = "increaseTargetWithRatio"
-
+class IncreaseTargetWithRatio(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -52,9 +53,7 @@ class IncreaseTargetWithRatio(ElixirLogic):
         return state
 
 
-class IncreaseTargetRanged(ElixirLogic):
-    js_alias: str = "increaseTargetRanged"
-
+class IncreaseTargetRanged(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -72,21 +71,24 @@ class IncreaseTargetRanged(ElixirLogic):
         return state
 
 
-class DecreaseTurnLeft(ElixirLogic):
-    js_alias: str = "decreaseTurnLeft"
-
+class DecreaseTurnLeft(ElixirOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
         state = state.deepcopy()
-        state.enchanter.consume_turn(self.value[0])
+        state.enchanter.consume_turn(self.consuming_turn)
 
         return state
 
+    def is_valid(self, state: GameState) -> bool:
+        return state.enchanter.turn_left >= self.consuming_turn + 1
 
-class ShuffleAll(ElixirLogic):
-    js_alias: str = "shuffleAll"
+    @property
+    def consuming_turn(self) -> int:
+        return self.value[0]
 
+
+class ShuffleAll(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -107,9 +109,7 @@ class ShuffleAll(ElixirLogic):
         return state
 
 
-class SetEnchantTargetAndAmount(ElixirLogic):
-    js_alias: str = "setEnchantTargetAndAmount"
-
+class SetEnchantTargetAndAmount(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -125,9 +125,7 @@ class SetEnchantTargetAndAmount(ElixirLogic):
         return state
 
 
-class UnlockAndLockOther(ElixirLogic):
-    js_alias: str = "unlockAndLockOther"
-
+class UnlockAndLockOther(ElixirOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -143,20 +141,19 @@ class UnlockAndLockOther(ElixirLogic):
 
         return state
 
+    def is_valid(self, state: GameState) -> bool:
+        return len(state.board.locked_indices()) != 0
+
 
 ## TODO: implement this
-class ChangeEffect(ElixirLogic):
-    js_alias: str = "changeEffect"
-
+class ChangeEffect(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
         return state.deepcopy()
 
 
-class LockTarget(ElixirLogic):
-    js_alias: str = "lockTarget"
-
+class LockTarget(ElixirOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -170,10 +167,11 @@ class LockTarget(ElixirLogic):
 
         return state
 
+    def is_valid(self, state: GameState) -> bool:
+        return state.requires_lock()
 
-class IncreaseReroll(ElixirLogic):
-    js_alias: str = "increaseReroll"
 
+class IncreaseReroll(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], random_number: float
     ) -> GameState:
@@ -181,3 +179,22 @@ class IncreaseReroll(ElixirLogic):
         state.modify_reroll(self.value[0])
 
         return state
+
+
+def get_operation_classes() -> list[Type[ElixirOperation]]:
+    operations: list[Type[ElixirOperation]] = [
+        AlwaysValidOperation,
+        MutateProb,
+        MutateLuckyRatio,
+        IncreaseTargetWithRatio,
+        IncreaseTargetRanged,
+        DecreaseTurnLeft,
+        ShuffleAll,
+        SetEnchantTargetAndAmount,
+        UnlockAndLockOther,
+        ChangeEffect,
+        LockTarget,
+        IncreaseReroll,
+    ]
+
+    return operations
