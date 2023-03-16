@@ -11,7 +11,7 @@ def fixture_council_pool() -> CouncilPool:
     return get_ingame_council_pool(skip=True)
 
 def test_pool_size_exact(council_pool: CouncilPool):
-    assert len(council_pool) == 216
+    assert len(council_pool) == 236
 
 
 @pytest.mark.parametrize(

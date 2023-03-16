@@ -223,8 +223,24 @@ class SetEnchantEffectCount(AlwaysValidOperation):
 
         return state
 
-    def is_valid(self, state: GameState) -> bool:
-        return state.requires_lock()
+
+class SetValueRanged(AlwaysValidOperation):
+    """<{0}> 효과의 단계를 [<1>~<2>] 중 하나로 바꿔주지."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        if len(targets) != 1:
+            raise TargetSizeMismatchException
+
+        target = targets[0]
+        state = state.deepcopy()
+        value_min, value_max = self.value
+        result = randomness.uniform_int(value_min, value_max)
+        state.board.set_effect_count(target, result)
+
+        return state
+
 
 
 def get_operation_classes() -> list[Type[ElixirOperation]]:
@@ -245,6 +261,7 @@ def get_operation_classes() -> list[Type[ElixirOperation]]:
         Restart,
         SetEnchantIncreaseAmount,
         SetEnchantEffectCount,
+        SetValueRanged,
     ]
 
     return operations
