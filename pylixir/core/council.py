@@ -153,6 +153,9 @@ class CouncilPool:
         self._councils = councils
         self._trials_before_exact_sampling = trials_before_exact_sampling
 
+    def __len__(self):
+        return len(self._councils)
+
     def sample_council(
         self, state: GameState, sage: Sage, randomness: Randomness
     ) -> Council:

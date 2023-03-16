@@ -182,6 +182,51 @@ class IncreaseReroll(AlwaysValidOperation):
         return state
 
 
+class DecreasePrice(AlwaysValidOperation):
+    """남은 모든 연성에서 비용이 <20%> 덜 들겠어."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        return state.deepcopy()
+
+
+class Restart(AlwaysValidOperation):
+    """이대론 안되겠어. 엘릭서의 효과와 단계를 <초기화>하겠다."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        return state.deepcopy()  ## TODO
+
+
+class SetEnchantIncreaseAmount(AlwaysValidOperation):
+    """이번에 연성되는 효과는 <2>단계 올라갈거야."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+        state.enchanter.increase_enchant_amount(self.value[0])
+
+        return state
+
+
+class SetEnchantEffectCount(AlwaysValidOperation):
+    """이번에는 <2>개의 효과를 동시에 연성하겠어"""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+        state.enchanter.change_enchant_effect_count(self.value[0])
+
+        return state
+
+    def is_valid(self, state: GameState) -> bool:
+        return state.requires_lock()
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
@@ -196,6 +241,10 @@ def get_operation_classes() -> list[Type[ElixirOperation]]:
         ChangeEffect,
         LockTarget,
         IncreaseReroll,
+        DecreasePrice,
+        Restart,
+        SetEnchantIncreaseAmount,
+        SetEnchantEffectCount,
     ]
 
     return operations
