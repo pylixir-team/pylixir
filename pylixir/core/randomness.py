@@ -26,4 +26,4 @@ class SeededRandomness(Randomness):
             list(range(len(probs))),
             weights=probs,
             k=1,
-        )
+        )[0]

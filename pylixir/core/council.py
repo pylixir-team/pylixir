@@ -123,7 +123,7 @@ class Council(pydantic.BaseModel):
 
     def is_valid(self, state: GameState) -> bool:
         return self._is_turn_in_range(state) and all(
-            [logic.is_valid() for logic in self.logics]
+            [logic.is_valid(state) for logic in self.logics]
         )
 
     def _is_turn_in_range(self, state: GameState):
@@ -178,7 +178,7 @@ class CouncilPool:
         return [
             council
             for council in self._councils
-            if council.type == council_type and (council.slot_type in (0, sage_slot))
+            if council.type == council_type and (council.slot_type in (3, sage_slot))
         ]
 
     def _get_council_type(self, state: GameState, sage: Sage) -> CouncilType:
