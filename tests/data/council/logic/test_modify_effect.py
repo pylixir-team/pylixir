@@ -96,10 +96,6 @@ def test_increase_target_with_ratio_reject_multiple_target(
         ).reduce(abundant_state, [2, 3], DeterministicRandomness(0.2345))
 
 
-
-
-
-
 @pytest.mark.parametrize(
     "value_range, random_number, amount",
     [

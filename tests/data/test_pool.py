@@ -1,7 +1,7 @@
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.core.council import Council, CouncilPool, CouncilType, Sage
+from pylixir.core.council import CouncilPool, CouncilType, Sage
 from pylixir.core.randomness import SeededRandomness
 from pylixir.data.pool import get_ingame_council_pool
 
