@@ -286,6 +286,8 @@ class RedistributeAll(AlwaysValidOperation):
 
 
 class RedistributeSelectedToOthers(AlwaysValidOperation):
+    """<네가 고르는> 효과의 단계를 전부 다른 효과에 나누지. 어떻게 나뉠지 보자고."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -311,6 +313,36 @@ class RedistributeSelectedToOthers(AlwaysValidOperation):
             state.board.set_effect_count(effect_idx, value)
 
         state.board.set_effect_count(target, 0)
+
+        return state
+
+
+class ShiftAll(AlwaysValidOperation):
+    """
+    <모든 효과>의 단계를 위로 <1> 슬롯 씩 옮겨주겠어.
+    0=up, 1=down
+    """
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        direction_offset = -1 if (self.value[0] == 0) else 1
+
+        unlocked_indices = state.board.unlocked_indices()
+        permuted_indices = [
+            unlocked_indices[(idx + direction_offset) % len(unlocked_indices)]
+            for idx in range(len(unlocked_indices))
+        ]
+
+        original_indices = unlocked_indices + state.board.locked_indices()
+        target_indices = permuted_indices + state.board.locked_indices()
+
+        original_values = state.board.get_effect_values()
+
+        for original_index, target_index in zip(original_indices, target_indices):
+            state.board.set_effect_count(target_index, original_values[original_index])
 
         return state
 
