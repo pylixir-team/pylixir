@@ -12,7 +12,7 @@ def fixture_council_pool() -> CouncilPool:
 
 
 def test_pool_size_exact(council_pool: CouncilPool) -> None:
-    assert len(council_pool) == 241
+    assert len(council_pool) == 255
 
 
 @pytest.mark.parametrize(

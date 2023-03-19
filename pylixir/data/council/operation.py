@@ -390,6 +390,14 @@ class SwapMinMax(AlwaysValidOperation):
         return state
 
 
+class Exhaust(AlwaysValidOperation):
+    """소진"""
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        return state.deepcopy()
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
@@ -412,6 +420,9 @@ def get_operation_classes() -> list[Type[ElixirOperation]]:
         RedistributeAll,
         RedistributeSelectedToOthers,
         ShiftAll,
+        SwapMinMax,
+        SwapValues,
+        Exhaust,
     ]
 
     return operations
