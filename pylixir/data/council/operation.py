@@ -465,6 +465,37 @@ class IncreaseMinAndDecreaseTarget(AlwaysValidOperation):
         return state
 
 
+class RedistributeMinToOthers(AlwaysValidOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+        redistribute_target_indices = [
+            idx for idx in state.board.unlocked_indices() if idx != choosed_min_index
+        ]
+
+        candidates = [state.board.get(idx).value for idx in redistribute_target_indices]
+        redistributed_values = randomness.redistribute(
+            candidates,
+            state.board.get_effect_values()[choosed_min_index],
+            state.board.get_max_value(),
+        )
+
+        for effect_idx, value in zip(redistribute_target_indices, redistributed_values):
+            state.board.set_effect_count(effect_idx, value)
+
+        state.board.set_effect_count(choosed_min_index, 0)
+
+        return state
+
+    def is_valid(self, state: GameState) -> bool:
+        return all(
+            state.board.get(idx).value > 0 for idx in state.board.mutable_indices()
+        )
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
