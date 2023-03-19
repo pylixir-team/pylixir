@@ -125,38 +125,6 @@ class Enchanter(pydantic.BaseModel):
     _mutations: list[Mutation] = pydantic.PrivateAttr(default_factory=list)
     size: int = 5
 
-    def enchant(self, locked: list[int], randomness: Randomness) -> list[int]:
-        return self.get_enchant_result(
-            self.query_enchant_prob(locked),
-            self.query_lucky_ratio(),
-            self.get_enchant_effect_count(),
-            self.get_enchant_amount(),
-            randomness,
-        )
-
-    def get_enchant_result(
-        self,
-        prob: list[float],
-        lucky_ratio: list[float],
-        count: int,
-        amount: int,
-        randomness: Randomness,
-    ) -> list[int]:
-        masked_prob = list(prob)
-        result = [0 for _ in range(self.size)]
-
-        for _ in range(count):
-            target_index = randomness.weighted_sampling(masked_prob)
-            # add result as amount
-            result[target_index] += amount
-            if randomness.binomial(lucky_ratio[target_index]):
-                result[target_index] += 1
-
-            # pick and prevent duplicated sampling
-            masked_prob[target_index] = 0
-
-        return result
-
     def get_enchant_amount(self) -> int:
         for mutation in self._mutations:
             if mutation.target == MutationTarget.enchant_increase_amount:

@@ -1,6 +1,7 @@
 from typing import Callable
 
 from pylixir.application.council import CouncilPool, SageCommittee
+from pylixir.application.enchant import EnchantCommand
 from pylixir.application.state import GameState
 from pylixir.core.base import Decision, Randomness
 from pylixir.interface.view import ClientView
@@ -30,9 +31,7 @@ class Client:
         for logic in council.logics:
             state = logic.apply(state, decision, self._randomness)
 
-        enchanted_result = state.enchanter.enchant(
-            state.board.locked_indices(), self._randomness
-        )
+        enchanted_result = EnchantCommand().enchant(state, self._randomness)
 
         for idx, amount in enumerate(enchanted_result):
             state.board.modify_effect_count(idx, amount)

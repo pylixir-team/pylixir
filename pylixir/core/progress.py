@@ -1,5 +1,6 @@
-import pydantic
 import enum
+
+import pydantic
 
 MAX_TURN_COUNT = 13
 
