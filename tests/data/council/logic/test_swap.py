@@ -1,7 +1,11 @@
 import pytest
 
 from pylixir.core.base import GameState
-from pylixir.data.council.operation import SwapMinMax, SwapValues
+from pylixir.data.council.operation import (
+    DecreaseMaxAndSwapMinMax,
+    SwapMinMax,
+    SwapValues,
+)
 from tests.randomness import DeterministicRandomness
 
 
@@ -56,6 +60,39 @@ def test_swap_min_max(
         abundant_state.board.lock(idx)
 
     operation = SwapMinMax(
+        ratio=0,
+        value=(0, 0),
+        remain_turn=1,
+    )
+
+    changed_state = operation.reduce(abundant_state, [], DeterministicRandomness(42))
+    assert changed_state.board.get_effect_values() == end
+
+
+@pytest.mark.parametrize(
+    "locked_indices, start, end",
+    [
+        ([], [1, 3, 5, 7, 9], [8, 3, 5, 7, 1]),
+        ([1], [1, 3, 5, 7, 9], [8, 3, 5, 7, 1]),
+        ([1, 2], [1, 3, 5, 7, 9], [8, 3, 5, 7, 1]),
+        ([0], [1, 3, 5, 7, 9], [1, 8, 5, 7, 3]),
+        ([0, 1, 2], [1, 3, 5, 7, 9], [1, 3, 5, 8, 7]),
+        ([4], [1, 3, 5, 7, 9], [6, 3, 5, 1, 9]),
+    ],
+)
+def test_decrease_max_and_swap_min_max(
+    locked_indices: list[int],
+    start: list[int],
+    end: list[int],
+    abundant_state: GameState,
+) -> None:
+    for idx in range(5):
+        abundant_state.board.set_effect_count(idx, start[idx])
+
+    for idx in locked_indices:
+        abundant_state.board.lock(idx)
+
+    operation = DecreaseMaxAndSwapMinMax(
         ratio=0,
         value=(0, 0),
         remain_turn=1,

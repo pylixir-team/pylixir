@@ -522,6 +522,26 @@ class RedistributeMaxToOthers(AlwaysValidOperation):
         return state
 
 
+class DecreaseMaxAndSwapMinMax(AlwaysValidOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+
+        state.board.set_effect_count(
+            choosed_min_index, original_values[choosed_max_index] - 1
+        )
+        state.board.set_effect_count(
+            choosed_max_index, original_values[choosed_min_index]
+        )
+
+        return state
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
