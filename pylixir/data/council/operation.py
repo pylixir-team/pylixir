@@ -347,6 +347,24 @@ class ShiftAll(AlwaysValidOperation):
         return state
 
 
+class SwapValues(ElixirOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+        original_values = state.board.get_effect_values()
+
+        a_idx, b_idx = self.value
+
+        state.board.set_effect_count(a_idx, original_values[b_idx])
+        state.board.set_effect_count(b_idx, original_values[a_idx])
+
+        return state
+
+    def is_valid(self, state: GameState) -> bool:
+        all(state.board.get(idx).is_mutable() for idx in self.value)
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
