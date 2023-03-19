@@ -1,12 +1,15 @@
 from pylixir.application.council import CouncilPool, Sage, SageCommittee
 from pylixir.application.state import GameState
-from pylixir.core.base import Board, Decision, Effect, GamePhase, Randomness
+from pylixir.core.base import Board, Decision, Effect, Randomness
+from pylixir.core.progress import GamePhase, Progress
 
 
 def state_initializer(max_value=10) -> GameState:
     return GameState(
-        phase=GamePhase.council,
-        reroll_left=2,
+        progress=Progress(
+            phase=GamePhase.council,
+            reroll_left=2,
+        ),
         board=Board(
             effects=[
                 Effect(name="A", value=0, locked=False, max_value=max_value),

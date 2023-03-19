@@ -77,13 +77,6 @@ class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
         return not self.locked and self.value < self.max_value
 
 
-class GamePhase(enum.Enum):
-    option = "option"
-    council = "council"
-    enchant = "enchant"
-    done = "done"
-
-
 MAX_EFFECT_COUNT = 11
 
 

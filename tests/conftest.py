@@ -1,14 +1,17 @@
 import pytest
 
 from pylixir.application.state import GameState
-from pylixir.core.base import Board, Effect, GamePhase
+from pylixir.core.base import Board, Effect
+from pylixir.core.progress import GamePhase, Progress
 
 
 @pytest.fixture
 def clean_state() -> GameState:
     return GameState(
-        phase=GamePhase.council,
-        reroll_left=1,
+        progress=Progress(
+            phase=GamePhase.council,
+            reroll_left=1,
+        ),
         board=Board(
             effects=[
                 Effect(name="A", value=0, locked=False, max_value=10),
@@ -25,8 +28,10 @@ def clean_state() -> GameState:
 @pytest.fixture
 def abundant_state() -> GameState:
     return GameState(
-        phase=GamePhase.council,
-        reroll_left=1,
+        progress=Progress(
+            phase=GamePhase.council,
+            reroll_left=1,
+        ),
         board=Board(
             effects=[
                 Effect(name="A", value=7, locked=False, max_value=10),
@@ -43,8 +48,10 @@ def abundant_state() -> GameState:
 @pytest.fixture
 def step_state() -> GameState:
     return GameState(
-        phase=GamePhase.council,
-        reroll_left=1,
+        progress=Progress(
+            phase=GamePhase.council,
+            reroll_left=1,
+        ),
         board=Board(
             effects=[
                 Effect(name="A", value=1, locked=False, max_value=10),

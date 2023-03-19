@@ -95,12 +95,12 @@ class DecreaseTurnLeft(ElixirOperation):
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
         state = state.deepcopy()
-        state.consume_turn(self.consuming_turn)
+        state.progress.spent_turn(self.consuming_turn)
 
         return state
 
     def is_valid(self, state: GameState) -> bool:
-        return state.turn_left >= self.consuming_turn + 1
+        return state.progress.get_turn_left() >= self.consuming_turn + 1
 
     @property
     def consuming_turn(self) -> int:
@@ -205,7 +205,7 @@ class IncreaseReroll(AlwaysValidOperation):
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
         state = state.deepcopy()
-        state.modify_reroll(self.value[0])
+        state.progress.modify_reroll(self.value[0])
 
         return state
 

@@ -135,7 +135,7 @@ class Council(pydantic.BaseModel):
 
     def _is_turn_in_range(self, state: GameState) -> bool:
         start, end = self.turn_range
-        return start <= state.get_current_turn() <= end
+        return start <= state.progress.get_current_turn() <= end
 
 
 CouncilSet = tuple[Council, Council, Council]
