@@ -2,7 +2,11 @@ from typing import Type
 
 from pylixir.core.base import GameState, Randomness
 from pylixir.core.council import ElixirOperation
-from pylixir.data.council.common import choose_max_indices, choose_min_indices
+from pylixir.data.council.common import (
+    choose_max_indices,
+    choose_min_indices,
+    choose_random_indices_with_exclusion,
+)
 
 
 class TargetSizeMismatchException(Exception):
@@ -392,10 +396,42 @@ class SwapMinMax(AlwaysValidOperation):
 
 class Exhaust(AlwaysValidOperation):
     """소진"""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
         return state.deepcopy()
+
+
+class IncreaseMaxAndDecreaseTarget(AlwaysValidOperation):
+    """<최고 단계> 효과 <1>개의 단계를 <1> 올려주지. 하지만 <최하 단계> 효과 <1>개의 단계는 <1> 내려갈 거야."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+
+        max_value_increment, target_increment = self.value
+
+        state.board.set_effect_count(
+            choosed_max_index, original_values[choosed_max_index] + max_value_increment
+        )
+
+        for target_idx in targets:
+            # prevents increase-decrease collision
+            if target_idx == choosed_max_index:
+                target_idx = choose_random_indices_with_exclusion(
+                    state.board, randomness, excludes=[choosed_max_index]
+                )
+
+            state.board.set_effect_count(
+                target_idx, original_values[target_idx] + target_increment
+            )
+
+        return state
 
 
 def get_operation_classes() -> list[Type[ElixirOperation]]:

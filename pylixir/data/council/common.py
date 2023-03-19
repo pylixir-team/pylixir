@@ -1,4 +1,4 @@
-from pylixir.core.base import Board, GameState, Randomness
+from pylixir.core.base import Board, Randomness
 
 
 def choose_max_indices(
@@ -23,3 +23,12 @@ def choose_min_indices(
         idx for idx in availabla_indices if board.get(idx).value == minimum_value
     ]  # since tatget_condition starts with 1
     return randomness.shuffle(candidates)[:count]
+
+
+def choose_random_indices_with_exclusion(
+    board: Board, randomness: Randomness, excludes: list[int]
+) -> int:
+
+    mutable_indices = [idx for idx in board.mutable_indices() if idx not in excludes]
+
+    return randomness.pick(mutable_indices)

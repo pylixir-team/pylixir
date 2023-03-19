@@ -1,5 +1,8 @@
+import pytest
+
 from pylixir.core.base import GameState
 from pylixir.data.council.operation import (
+    IncreaseMaxAndDecreaseTarget,
     SetEnchantEffectCount,
     SetEnchantIncreaseAmount,
 )
@@ -28,3 +31,35 @@ def test_set_effect_enchant_count(abundant_state: GameState) -> None:
     )
 
     assert enchant_count == changed_state.enchanter.get_enchant_effect_count()
+
+
+@pytest.mark.parametrize(
+    "targets, amount, start, end",
+    [
+        ([], (1, 0), [1, 3, 5, 7, 9], [1, 3, 5, 7, 10]),
+        ([1], (1, -1), [1, 3, 5, 7, 9], [1, 2, 5, 7, 10]),
+        ([2], (1, -1), [1, 3, 5, 7, 9], [1, 3, 4, 7, 10]),
+        ([3], (1, -1), [1, 3, 5, 7, 9], [1, 3, 5, 6, 10]),
+        ([4], (1, -1), [1, 3, 5, 7, 9], [1, 2, 5, 7, 10]),  # May subtle
+    ],
+)
+def test_increase_max_and_decrease_min(
+    targets: list[int],
+    amount: tuple[int, int],
+    start: list[int],
+    end: list[int],
+    abundant_state: GameState,
+):
+    for idx in range(5):
+        abundant_state.board.set_effect_count(idx, start[idx])
+
+    operation = IncreaseMaxAndDecreaseTarget(
+        ratio=0,
+        value=amount,
+        remain_turn=1,
+    )
+
+    changed_state = operation.reduce(
+        abundant_state, targets, DeterministicRandomness(0.123)
+    )
+    assert changed_state.board.get_effect_values() == end
