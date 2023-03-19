@@ -21,7 +21,7 @@ def test_turn_in_range(
     turn_range: tuple[int, int],
     target_turn: int,
     expected: bool,
-):
+) -> None:
     council = Council(
         id="any",
         logics=[],

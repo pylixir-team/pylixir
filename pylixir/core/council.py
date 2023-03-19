@@ -108,7 +108,7 @@ class Logic(pydantic.BaseModel):
 
         return new_state
 
-    def is_valid(self, state: GameState):
+    def is_valid(self, state: GameState) -> bool:
         return self.operation.is_valid(state) and self.target_selector.is_valid(state)
 
 
@@ -126,7 +126,7 @@ class Council(pydantic.BaseModel):
             logic.is_valid(state) for logic in self.logics
         )
 
-    def _is_turn_in_range(self, state: GameState):
+    def _is_turn_in_range(self, state: GameState) -> bool:
         start, end = self.turn_range
         return start <= state.enchanter.get_current_turn() <= end
 
@@ -153,7 +153,7 @@ class CouncilPool:
         self._councils = councils
         self._trials_before_exact_sampling = trials_before_exact_sampling
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._councils)
 
     def sample_council(
@@ -162,7 +162,7 @@ class CouncilPool:
         council_type = self._get_council_type(state, sage)
         candidates = self.get_available_councils(sage.slot, council_type)
 
-        weights = [council.pickup_ratio for council in candidates]
+        weights = [float(council.pickup_ratio) for council in candidates]
 
         for _ in range(self._trials_before_exact_sampling):
             idx = randomness.weighted_sampling(weights)
@@ -172,7 +172,7 @@ class CouncilPool:
 
         refined_council = [council for council in candidates if council.is_valid(state)]
 
-        refined_weights = [council.pickup_ratio for council in refined_council]
+        refined_weights = [float(council.pickup_ratio) for council in refined_council]
         return refined_council[randomness.weighted_sampling(refined_weights)]
 
     def get_available_councils(
