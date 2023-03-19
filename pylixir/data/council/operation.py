@@ -434,6 +434,37 @@ class IncreaseMaxAndDecreaseTarget(AlwaysValidOperation):
         return state
 
 
+class IncreaseMinAndDecreaseTarget(AlwaysValidOperation):
+    """<최하 단계> 효과 <1>개의 단계를 <2> 올려주지. 하지만 <최고 단계> 효과 <1>개의 단계는 <2> 내려갈 거야."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+
+        min_value_increment, target_increment = self.value
+
+        state.board.set_effect_count(
+            choosed_min_index, original_values[choosed_min_index] + min_value_increment
+        )
+
+        for target_idx in targets:
+            # prevents increase-decrease collision
+            if target_idx == choosed_min_index:
+                target_idx = choose_random_indices_with_exclusion(
+                    state.board, randomness, excludes=[choosed_min_index]
+                )
+
+            state.board.set_effect_count(
+                target_idx, original_values[target_idx] + target_increment
+            )
+
+        return state
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
