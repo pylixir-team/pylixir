@@ -133,8 +133,6 @@ class Board(pydantic.BaseModel):
 class Enchanter(pydantic.BaseModel):
     _mutations: list[Mutation] = pydantic.PrivateAttr(default_factory=list)
     size: int = 5
-    turn_left: int = MAX_TURN_COUNT
-    total_turn: int = MAX_TURN_COUNT
 
     def enchant(self, locked: list[int], randomness: Randomness) -> list[int]:
         return self.get_enchant_result(
@@ -264,18 +262,14 @@ class Enchanter(pydantic.BaseModel):
             )
         )
 
-    def consume_turn(self, count: int) -> None:
-        self.turn_left -= count
-
-    def get_current_turn(self) -> int:
-        return self.total_turn - self.turn_left
-
 
 class GameState(pydantic.BaseModel):
     phase: GamePhase
     reroll_left: int
     board: Board
     enchanter: Enchanter = pydantic.Field(default_factory=Enchanter)
+    turn_left: int = MAX_TURN_COUNT
+    total_turn: int = MAX_TURN_COUNT
 
     class Config:
         arbitrary_types_allowed = True
@@ -291,4 +285,10 @@ class GameState(pydantic.BaseModel):
         locked_effect_count = len(self.board.locked_indices())
         required_locks = 3 - locked_effect_count
 
-        return self.enchanter.turn_left <= required_locks
+        return self.turn_left <= required_locks
+
+    def consume_turn(self, count: int) -> None:
+        self.turn_left -= count
+
+    def get_current_turn(self) -> int:
+        return self.total_turn - self.turn_left

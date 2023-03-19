@@ -16,7 +16,4 @@ def test_decrease_turn(turn_count: int, abundant_state: GameState) -> None:
     changed_state = operation.reduce(
         abundant_state, [], DeterministicRandomness(0.3456)
     )
-    assert (
-        changed_state.enchanter.turn_left
-        == abundant_state.enchanter.turn_left - turn_count
-    )
+    assert changed_state.turn_left == abundant_state.turn_left - turn_count

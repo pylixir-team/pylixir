@@ -32,6 +32,6 @@ def test_turn_in_range(
         type="common",
     )
 
-    clean_state.enchanter.consume_turn(target_turn)
+    clean_state.consume_turn(target_turn)
 
     assert council.is_valid(clean_state) == expected

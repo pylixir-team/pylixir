@@ -25,8 +25,6 @@ def test_decrease_turn_requires_enough_turn_left(
         value=(turn_count, 0),
         remain_turn=1,
     )
-    clean_state.enchanter.consume_turn(
-        clean_state.enchanter.turn_left - target_turn_left
-    )
+    clean_state.consume_turn(clean_state.turn_left - target_turn_left)
 
     assert operation.is_valid(clean_state) == valid
