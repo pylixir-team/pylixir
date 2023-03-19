@@ -42,11 +42,17 @@ class Sage(pydantic.BaseModel):
 
         return SageType.chaos
 
-    def run(self) -> None:
-        ...
+    def selected(self) -> None:
+        if self.power < 0 or self.power == MAX_LAWFUL:
+            self.power = 0
 
-    def update_power(self, selected: bool) -> None:
-        ...
+        self.power += 1
+
+    def discarded(self) -> None:
+        if self.power > 0 or self.power == MAX_CHAOS:
+            self.power = 0
+
+        self.power -= 1
 
     def is_lawful_max(self) -> bool:
         return self.power == MAX_LAWFUL
@@ -131,19 +137,25 @@ class Council(pydantic.BaseModel):
         return start <= state.enchanter.get_current_turn() <= end
 
 
+CouncilSet = tuple[Council, Council, Council]
+
+
 class SageCommittee(pydantic.BaseModel):
     sages: tuple[Sage, Sage, Sage]
-    councils: tuple[Optional[Council], Optional[Council], Optional[Council]]
+    councils: CouncilSet
 
-    def pick(self, sage_index: int) -> None:
-        ...
+    def pick(self, picked_slot: int) -> None:
+        for sage in self.sages:
+            if sage.slot == picked_slot:
+                sage.selected()
+            else:
+                sage.discarded()
 
     def get_council(self, sage_index: int) -> Council:
-        maybe_council = self.councils[sage_index]
-        if maybe_council is None:
-            raise IndexError
+        return self.councils[sage_index]
 
-        return maybe_council
+    def set_councils(self, councils: CouncilSet) -> None:
+        self.councils = councils
 
 
 class CouncilPool:
@@ -155,6 +167,19 @@ class CouncilPool:
 
     def __len__(self) -> int:
         return len(self._councils)
+
+    def get_council_set(
+        self,
+        state: GameState,
+        sages: list[Sage],
+        randomness: Randomness,
+        is_reroll: bool = False,
+    ) -> CouncilSet:
+        # TODO: protection logic for reroll
+        if is_reroll:
+            pass
+
+        return tuple([self.sample_council(state, sage, randomness) for sage in sages])
 
     def sample_council(
         self, state: GameState, sage: Sage, randomness: Randomness
