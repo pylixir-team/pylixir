@@ -285,6 +285,36 @@ class RedistributeAll(AlwaysValidOperation):
         return state
 
 
+class RedistributeSelectedToOthers(AlwaysValidOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        if len(targets) != 1:
+            raise TargetSizeMismatchException
+
+        target = targets[0]
+
+        state = state.deepcopy()
+
+        redistribute_target_indices = [
+            idx for idx in state.board.unlocked_indices() if idx != target
+        ]
+
+        candidates = [state.board.get(idx).value for idx in redistribute_target_indices]
+        redistributed_values = randomness.redistribute(
+            candidates,
+            state.board.get_effect_values()[target],
+            state.board.get_max_value(),
+        )
+
+        for effect_idx, value in zip(redistribute_target_indices, redistributed_values):
+            state.board.set_effect_count(effect_idx, value)
+
+        state.board.set_effect_count(target, 0)
+
+        return state
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
