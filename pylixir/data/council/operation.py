@@ -592,6 +592,8 @@ def get_operation_classes() -> list[Type[ElixirOperation]]:
         IncreaseMinAndDecreaseTarget,
         RedistributeMinToOthers,
         RedistributeMaxToOthers,
+        DecreaseMaxAndSwapMinMax,
+        DecreaseFirstTargetAndSwap,
     ]
 
     return operations
