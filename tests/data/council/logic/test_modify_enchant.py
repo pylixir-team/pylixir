@@ -50,7 +50,7 @@ def test_increase_max_and_decrease_target(
     start: list[int],
     end: list[int],
     abundant_state: GameState,
-):
+) -> None:
     for idx in range(5):
         abundant_state.board.set_effect_count(idx, start[idx])
 
@@ -83,7 +83,7 @@ def test_increase_min_and_decrease_target(
     start: list[int],
     end: list[int],
     abundant_state: GameState,
-):
+) -> None:
     for idx in range(5):
         abundant_state.board.set_effect_count(idx, start[idx])
 

@@ -369,7 +369,7 @@ class SwapValues(ElixirOperation):
         return state
 
     def is_valid(self, state: GameState) -> bool:
-        all(state.board.get(idx).is_mutable() for idx in self.value)
+        return all(state.board.get(idx).is_mutable() for idx in self.value)
 
 
 class SwapMinMax(AlwaysValidOperation):

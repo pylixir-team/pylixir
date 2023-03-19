@@ -132,7 +132,7 @@ def test_redistribute_min_to_others(
     assert equal_count < correct_count
 
 
-def test_zero_value_forbidden_in_min_distribute(step_state: GameState):
+def test_zero_value_forbidden_in_min_distribute(step_state: GameState) -> None:
     assert RedistributeMinToOthers(
         ratio=0,
         value=(0, 0),
