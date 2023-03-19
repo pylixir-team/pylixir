@@ -366,6 +366,9 @@ def get_operation_classes() -> list[Type[ElixirOperation]]:
         SetEnchantIncreaseAmount,
         SetEnchantEffectCount,
         SetValueRanged,
+        RedistributeAll,
+        RedistributeSelectedToOthers,
+        ShiftAll,
     ]
 
     return operations
