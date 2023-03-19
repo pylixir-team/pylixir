@@ -542,6 +542,27 @@ class DecreaseMaxAndSwapMinMax(AlwaysValidOperation):
         return state
 
 
+class DecreaseFirstTargetAndSwap(ElixirOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        first_target, second_target = self.value
+
+        state.board.set_effect_count(second_target, original_values[first_target] - 1)
+        state.board.set_effect_count(first_target, original_values[second_target])
+
+        return state
+
+    def is_valid(self, state: GameState) -> bool:
+        first_target, second_target = self.value
+        return all(state.board.get(idx).is_mutable() for idx in self.value) and (
+            state.board.get(first_target).value > state.board.get(second_target).value
+        )
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
