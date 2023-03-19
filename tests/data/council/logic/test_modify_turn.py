@@ -6,7 +6,7 @@ from tests.randomness import DeterministicRandomness
 
 
 @pytest.mark.parametrize("turn_count", [1, 2])
-def test_increase_target_with_ratio(turn_count: int, abundant_state: GameState) -> None:
+def test_decrease_turn(turn_count: int, abundant_state: GameState) -> None:
     operation = DecreaseTurnLeft(
         ratio=0,
         value=(turn_count, 0),
