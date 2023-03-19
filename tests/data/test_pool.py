@@ -11,8 +11,8 @@ def fixture_council_pool() -> CouncilPool:
     return get_ingame_council_pool(skip=True)
 
 
-def test_pool_size_exact(council_pool: CouncilPool):
-    assert len(council_pool) == 236
+def test_pool_size_exact(council_pool: CouncilPool) -> None:
+    assert len(council_pool) == 294
 
 
 @pytest.mark.parametrize(
@@ -35,7 +35,7 @@ def test_get_council(
     assert len(councils) > count
 
 
-def test_sample_council(council_pool: CouncilPool, abundant_state: GameState):
+def test_sample_council(council_pool: CouncilPool, abundant_state: GameState) -> None:
     for seed in range(50):
         randomness = SeededRandomness(seed)
         council_pool.sample_council(

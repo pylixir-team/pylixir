@@ -2,6 +2,11 @@ from typing import Type
 
 from pylixir.core.base import GameState, Randomness
 from pylixir.core.council import ElixirOperation
+from pylixir.data.council.common import (
+    choose_max_indices,
+    choose_min_indices,
+    choose_random_indices_with_exclusion,
+)
 
 
 class TargetSizeMismatchException(Exception):
@@ -285,6 +290,279 @@ class RedistributeAll(AlwaysValidOperation):
         return state
 
 
+class RedistributeSelectedToOthers(AlwaysValidOperation):
+    """<네가 고르는> 효과의 단계를 전부 다른 효과에 나누지. 어떻게 나뉠지 보자고."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        if len(targets) != 1:
+            raise TargetSizeMismatchException
+
+        target = targets[0]
+
+        state = state.deepcopy()
+
+        redistribute_target_indices = [
+            idx for idx in state.board.unlocked_indices() if idx != target
+        ]
+
+        candidates = [state.board.get(idx).value for idx in redistribute_target_indices]
+        redistributed_values = randomness.redistribute(
+            candidates,
+            state.board.get_effect_values()[target],
+            state.board.get_max_value(),
+        )
+
+        for effect_idx, value in zip(redistribute_target_indices, redistributed_values):
+            state.board.set_effect_count(effect_idx, value)
+
+        state.board.set_effect_count(target, 0)
+
+        return state
+
+
+class ShiftAll(AlwaysValidOperation):
+    """
+    <모든 효과>의 단계를 위로 <1> 슬롯 씩 옮겨주겠어.
+    0=up, 1=down
+    """
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        direction_offset = -1 if (self.value[0] == 0) else 1
+
+        unlocked_indices = state.board.unlocked_indices()
+        permuted_indices = [
+            unlocked_indices[(idx + direction_offset) % len(unlocked_indices)]
+            for idx in range(len(unlocked_indices))
+        ]
+
+        original_indices = unlocked_indices + state.board.locked_indices()
+        target_indices = permuted_indices + state.board.locked_indices()
+
+        original_values = state.board.get_effect_values()
+
+        for original_index, target_index in zip(original_indices, target_indices):
+            state.board.set_effect_count(target_index, original_values[original_index])
+
+        return state
+
+
+class SwapValues(ElixirOperation):
+    """<{0}> 효과와 <{1}> 효과의 단계를 뒤바꿔줄게."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+        original_values = state.board.get_effect_values()
+
+        a_idx, b_idx = self.value
+
+        state.board.set_effect_count(a_idx, original_values[b_idx])
+        state.board.set_effect_count(b_idx, original_values[a_idx])
+
+        return state
+
+    def is_valid(self, state: GameState) -> bool:
+        return all(state.board.get(idx).is_mutable() for idx in self.value)
+
+
+class SwapMinMax(AlwaysValidOperation):
+    """<최고 단계> 효과 <1>개와  <최하 단계> 효과 <1>개의 단계를 뒤바꿔주지."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+
+        state.board.set_effect_count(
+            choosed_min_index, original_values[choosed_max_index]
+        )
+        state.board.set_effect_count(
+            choosed_max_index, original_values[choosed_min_index]
+        )
+
+        return state
+
+
+class Exhaust(AlwaysValidOperation):
+    """소진"""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        return state.deepcopy()
+
+
+class IncreaseMaxAndDecreaseTarget(AlwaysValidOperation):
+    """<최고 단계> 효과 <1>개의 단계를 <1> 올려주지. 하지만 <최하 단계> 효과 <1>개의 단계는 <1> 내려갈 거야."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+
+        max_value_increment, target_increment = self.value
+
+        state.board.set_effect_count(
+            choosed_max_index, original_values[choosed_max_index] + max_value_increment
+        )
+
+        for target_idx in targets:
+            # prevents increase-decrease collision
+            if target_idx == choosed_max_index:
+                target_idx = choose_random_indices_with_exclusion(
+                    state.board, randomness, excludes=[choosed_max_index]
+                )
+
+            state.board.set_effect_count(
+                target_idx, original_values[target_idx] + target_increment
+            )
+
+        return state
+
+
+class IncreaseMinAndDecreaseTarget(AlwaysValidOperation):
+    """<최하 단계> 효과 <1>개의 단계를 <2> 올려주지. 하지만 <최고 단계> 효과 <1>개의 단계는 <2> 내려갈 거야."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+
+        min_value_increment, target_increment = self.value
+
+        state.board.set_effect_count(
+            choosed_min_index, original_values[choosed_min_index] + min_value_increment
+        )
+
+        for target_idx in targets:
+            # prevents increase-decrease collision
+            if target_idx == choosed_min_index:
+                target_idx = choose_random_indices_with_exclusion(
+                    state.board, randomness, excludes=[choosed_min_index]
+                )
+
+            state.board.set_effect_count(
+                target_idx, original_values[target_idx] + target_increment
+            )
+
+        return state
+
+
+class RedistributeMinToOthers(ElixirOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+        redistribute_target_indices = [
+            idx for idx in state.board.unlocked_indices() if idx != choosed_min_index
+        ]
+
+        candidates = [state.board.get(idx).value for idx in redistribute_target_indices]
+        redistributed_values = randomness.redistribute(
+            candidates,
+            state.board.get_effect_values()[choosed_min_index],
+            state.board.get_max_value(),
+        )
+
+        for effect_idx, value in zip(redistribute_target_indices, redistributed_values):
+            state.board.set_effect_count(effect_idx, value)
+
+        state.board.set_effect_count(choosed_min_index, 0)
+
+        return state
+
+    def is_valid(self, state: GameState) -> bool:
+        return all(
+            state.board.get(idx).value > 0 for idx in state.board.mutable_indices()
+        )
+
+
+class RedistributeMaxToOthers(AlwaysValidOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+        redistribute_target_indices = [
+            idx for idx in state.board.unlocked_indices() if idx != choosed_max_index
+        ]
+
+        candidates = [state.board.get(idx).value for idx in redistribute_target_indices]
+        redistributed_values = randomness.redistribute(
+            candidates,
+            state.board.get_effect_values()[choosed_max_index],
+            state.board.get_max_value(),
+        )
+
+        for effect_idx, value in zip(redistribute_target_indices, redistributed_values):
+            state.board.set_effect_count(effect_idx, value)
+
+        state.board.set_effect_count(choosed_max_index, 0)
+
+        return state
+
+
+class DecreaseMaxAndSwapMinMax(AlwaysValidOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+
+        state.board.set_effect_count(
+            choosed_min_index, original_values[choosed_max_index] - 1
+        )
+        state.board.set_effect_count(
+            choosed_max_index, original_values[choosed_min_index]
+        )
+
+        return state
+
+
+class DecreaseFirstTargetAndSwap(ElixirOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        first_target, second_target = self.value
+
+        state.board.set_effect_count(second_target, original_values[first_target] - 1)
+        state.board.set_effect_count(first_target, original_values[second_target])
+
+        return state
+
+    def is_valid(self, state: GameState) -> bool:
+        first_target, second_target = self.value
+        return all(state.board.get(idx).is_mutable() for idx in self.value) and (
+            state.board.get(first_target).value > state.board.get(second_target).value
+        )
+
+
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
         AlwaysValidOperation,
@@ -304,6 +582,18 @@ def get_operation_classes() -> list[Type[ElixirOperation]]:
         SetEnchantIncreaseAmount,
         SetEnchantEffectCount,
         SetValueRanged,
+        RedistributeAll,
+        RedistributeSelectedToOthers,
+        ShiftAll,
+        SwapMinMax,
+        SwapValues,
+        Exhaust,
+        IncreaseMaxAndDecreaseTarget,
+        IncreaseMinAndDecreaseTarget,
+        RedistributeMinToOthers,
+        RedistributeMaxToOthers,
+        DecreaseMaxAndSwapMinMax,
+        DecreaseFirstTargetAndSwap,
     ]
 
     return operations
