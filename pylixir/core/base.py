@@ -30,6 +30,19 @@ class Randomness(metaclass=abc.ABCMeta):
     def weighted_sampling(self, probs: list[float]) -> int:
         ...
 
+    def redistribute(self, basis: list[int], count: int, max_count: int) -> list[int]:
+        result = list(basis)
+        desired_sum = sum(basis) + count
+
+        while sum(result) < desired_sum:
+            valid_indices = [
+                idx for idx in range(len(basis)) if result[idx] < max_count
+            ]
+            target_index = self.pick(valid_indices)
+            result[target_index] += 1
+
+        return result
+
 
 class Decision(pydantic.BaseModel):  # UIState
     sage_index: int
@@ -111,6 +124,10 @@ class Board(pydantic.BaseModel):
 
     def __len__(self) -> int:
         return len(self.effects)
+
+    def get_max_value(self) -> int:
+        # TODO: as unique prop.
+        return self.effects[0].max_value
 
 
 class Enchanter(pydantic.BaseModel):

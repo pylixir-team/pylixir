@@ -14,6 +14,8 @@ class AlwaysValidOperation(ElixirOperation):
 
 
 class MutateProb(AlwaysValidOperation):
+    """이번 연성에서 {0} 효과가 연성될 확률을 x% 올려주지."""
+
     def reduce(
         self,
         state: GameState,
@@ -29,6 +31,8 @@ class MutateProb(AlwaysValidOperation):
 
 
 class MutateLuckyRatio(AlwaysValidOperation):
+    """이번 연성에서 {0} 효과의 대성공 확률을 x% 올려주지."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -41,6 +45,8 @@ class MutateLuckyRatio(AlwaysValidOperation):
 
 
 class IncreaseTargetWithRatio(AlwaysValidOperation):
+    """<{0}> 효과의 단계를 <1> 올려보겠어. <25>% 확률로 성공하겠군."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -57,6 +63,8 @@ class IncreaseTargetWithRatio(AlwaysValidOperation):
 
 
 class IncreaseTargetRanged(AlwaysValidOperation):
+    """<{0}> 효과의 단계를 [<+1>~<+2>]만큼 올려주지."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -75,6 +83,8 @@ class IncreaseTargetRanged(AlwaysValidOperation):
 
 
 class DecreaseTurnLeft(ElixirOperation):
+    """대신 기회를 2회 소모하겠군."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -92,6 +102,8 @@ class DecreaseTurnLeft(ElixirOperation):
 
 
 class ShuffleAll(AlwaysValidOperation):
+    """<모든 효과>의 단계를 뒤섞도록 하지. 어떻게 뒤섞일지 보자고."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -113,6 +125,8 @@ class ShuffleAll(AlwaysValidOperation):
 
 
 class SetEnchantTargetAndAmount(AlwaysValidOperation):
+    """이번에는 <{0}> 효과를 <2>단계 연성해주지."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -129,6 +143,8 @@ class SetEnchantTargetAndAmount(AlwaysValidOperation):
 
 
 class UnlockAndLockOther(ElixirOperation):
+    """<임의의 효과> <1>개의 봉인을 해제하고, 다른 효과 <1>개를 봉인해주지."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -148,6 +164,8 @@ class UnlockAndLockOther(ElixirOperation):
 
 ## TODO: implement this
 class ChangeEffect(AlwaysValidOperation):
+    """<네가 고르는> 슬롯의 효과를 바꿔주지. 어떤 효과일지 보자고."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -155,6 +173,8 @@ class ChangeEffect(AlwaysValidOperation):
 
 
 class LockTarget(ElixirOperation):
+    """<{0}> 효과를 봉인하겠다."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -173,11 +193,94 @@ class LockTarget(ElixirOperation):
 
 
 class IncreaseReroll(AlwaysValidOperation):
+    """조언이 더 필요한가? 다른 조언 보기 횟수를 <2>회 늘려주지."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
         state = state.deepcopy()
         state.modify_reroll(self.value[0])
+
+        return state
+
+
+class DecreasePrice(AlwaysValidOperation):
+    """남은 모든 연성에서 비용이 <20%> 덜 들겠어."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        return state.deepcopy()
+
+
+class Restart(AlwaysValidOperation):
+    """이대론 안되겠어. 엘릭서의 효과와 단계를 <초기화>하겠다."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        return state.deepcopy()  ## TODO
+
+
+class SetEnchantIncreaseAmount(AlwaysValidOperation):
+    """이번에 연성되는 효과는 <2>단계 올라갈거야."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+        state.enchanter.increase_enchant_amount(self.value[0])
+
+        return state
+
+
+class SetEnchantEffectCount(AlwaysValidOperation):
+    """이번에는 <2>개의 효과를 동시에 연성하겠어"""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+        state.enchanter.change_enchant_effect_count(self.value[0])
+
+        return state
+
+
+class SetValueRanged(AlwaysValidOperation):
+    """<{0}> 효과의 단계를 [<1>~<2>] 중 하나로 바꿔주지."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        if len(targets) != 1:
+            raise TargetSizeMismatchException
+
+        target = targets[0]
+        state = state.deepcopy()
+        value_min, value_max = self.value
+        result = randomness.uniform_int(value_min, value_max)
+        state.board.set_effect_count(target, result)
+
+        return state
+
+
+class RedistributeAll(AlwaysValidOperation):
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        unlocked_indices = state.board.unlocked_indices()
+
+        candidates = [state.board.get(idx).value for idx in unlocked_indices]
+        redistributed_values = randomness.redistribute(
+            [0 for idx in range(len(candidates))],
+            sum(candidates),
+            state.board.get_max_value(),
+        )
+
+        for effect_idx, value in zip(unlocked_indices, redistributed_values):
+            state.board.set_effect_count(effect_idx, value)
 
         return state
 
@@ -196,6 +299,11 @@ def get_operation_classes() -> list[Type[ElixirOperation]]:
         ChangeEffect,
         LockTarget,
         IncreaseReroll,
+        DecreasePrice,
+        Restart,
+        SetEnchantIncreaseAmount,
+        SetEnchantEffectCount,
+        SetValueRanged,
     ]
 
     return operations
