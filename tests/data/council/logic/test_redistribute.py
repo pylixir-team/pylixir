@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import GameState
+from pylixir.application.state import GameState
 from pylixir.data.council.common import choose_max_indices, choose_min_indices
 from pylixir.data.council.operation import (
     RedistributeAll,

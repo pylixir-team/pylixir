@@ -1,5 +1,6 @@
-from pylixir.core.base import Board, Decision, Effect, GamePhase, GameState, Randomness
-from pylixir.core.council import CouncilPool, Sage, SageCommittee
+from pylixir.application.council import CouncilPool, Sage, SageCommittee
+from pylixir.application.state import GameState
+from pylixir.core.base import Board, Decision, Effect, GamePhase, Randomness
 
 
 def state_initializer(max_value=10) -> GameState:

@@ -2,8 +2,9 @@ from typing import Optional
 
 import pytest
 
-from pylixir.core.base import GameState, Randomness
-from pylixir.core.council import TargetSelector
+from pylixir.application.council import TargetSelector
+from pylixir.application.state import GameState
+from pylixir.core.base import Randomness
 from pylixir.data.loader import ElixirTargetSelectorLoader
 
 

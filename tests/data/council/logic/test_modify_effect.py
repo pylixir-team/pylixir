@@ -2,8 +2,8 @@ from typing import Type
 
 import pytest
 
-from pylixir.core.base import GameState
-from pylixir.core.council import ElixirOperation
+from pylixir.application.council import ElixirOperation
+from pylixir.application.state import GameState
 from pylixir.data.council.operation import (
     IncreaseTargetRanged,
     IncreaseTargetWithRatio,

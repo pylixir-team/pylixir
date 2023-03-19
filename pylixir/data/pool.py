@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pydantic
 
-from pylixir.core.council import Council, CouncilPool, Logic
+from pylixir.application.council import Council, CouncilPool, Logic
 from pylixir.data.council.operation import get_operation_classes
 from pylixir.data.council.target import get_target_classes
 from pylixir.data.loader import ElixirOperationLoader, ElixirTargetSelectorLoader

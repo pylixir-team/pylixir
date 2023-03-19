@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import GameState
+from pylixir.application.state import GameState
 from pylixir.data.council.operation import DecreaseTurnLeft
 from tests.randomness import DeterministicRandomness
 

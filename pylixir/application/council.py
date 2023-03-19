@@ -4,7 +4,8 @@ from typing import Optional
 
 import pydantic
 
-from pylixir.core.base import Decision, GameState, Randomness
+from pylixir.application.state import GameState
+from pylixir.core.base import Decision, Randomness
 
 
 class SageType(enum.Enum):

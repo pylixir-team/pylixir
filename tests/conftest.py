@@ -1,6 +1,7 @@
 import pytest
 
-from pylixir.core.base import Board, Effect, GamePhase, GameState
+from pylixir.application.state import GameState
+from pylixir.core.base import Board, Effect, GamePhase
 
 
 @pytest.fixture

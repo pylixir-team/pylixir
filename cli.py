@@ -1,9 +1,10 @@
-from pylixir.core.council import CouncilPool
+from pylixir.application.council import CouncilPool
 from pylixir.interface.game import Client
 from pylixir.core.randomness import SeededRandomness
 from pylixir.data.pool import get_ingame_council_pool
 from pylixir.interface.configuration import state_initializer, create_empty_committee
-from pylixir.core.base import Decision, GameState, Randomness
+from pylixir.core.base import Decision, Randomness
+from pylixir.application.state import GameState
 
 
 def cli():

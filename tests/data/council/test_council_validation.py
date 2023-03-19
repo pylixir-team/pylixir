@@ -1,7 +1,7 @@
 import pytest
 
-from pylixir.core.base import GameState
-from pylixir.core.council import Council
+from pylixir.application.council import Council
+from pylixir.application.state import GameState
 
 
 @pytest.mark.parametrize(

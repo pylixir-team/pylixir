@@ -1,7 +1,8 @@
 from typing import Callable
 
-from pylixir.core.base import Decision, GameState, Randomness
-from pylixir.core.council import CouncilPool, SageCommittee
+from pylixir.application.council import CouncilPool, SageCommittee
+from pylixir.application.state import GameState
+from pylixir.core.base import Decision, Randomness
 from pylixir.interface.view import ClientView
 
 

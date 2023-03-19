@@ -1,7 +1,8 @@
 from typing import Type
 
-from pylixir.core.base import GameState, Randomness
-from pylixir.core.council import ElixirOperation
+from pylixir.application.council import ElixirOperation
+from pylixir.application.state import GameState
+from pylixir.core.base import Randomness
 from pylixir.data.council.common import (
     choose_max_indices,
     choose_min_indices,

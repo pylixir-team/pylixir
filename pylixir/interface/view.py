@@ -2,8 +2,9 @@ from typing import Callable
 
 import pydantic
 
-from pylixir.core.base import Board, Decision, Effect, GameState, Randomness
-from pylixir.core.council import Council, CouncilPool, Sage, SageCommittee
+from pylixir.application.council import Council, CouncilPool, Sage, SageCommittee
+from pylixir.application.state import GameState
+from pylixir.core.base import Board, Decision, Effect, Randomness
 
 
 class CommitteeView(pydantic.BaseModel):
