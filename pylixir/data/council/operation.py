@@ -2,6 +2,7 @@ from typing import Type
 
 from pylixir.core.base import GameState, Randomness
 from pylixir.core.council import ElixirOperation
+from pylixir.data.council.common import choose_max_indices, choose_min_indices
 
 
 class TargetSizeMismatchException(Exception):
@@ -348,6 +349,8 @@ class ShiftAll(AlwaysValidOperation):
 
 
 class SwapValues(ElixirOperation):
+    """<{0}> 효과와 <{1}> 효과의 단계를 뒤바꿔줄게."""
+
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
@@ -363,6 +366,28 @@ class SwapValues(ElixirOperation):
 
     def is_valid(self, state: GameState) -> bool:
         all(state.board.get(idx).is_mutable() for idx in self.value)
+
+
+class SwapMinMax(AlwaysValidOperation):
+    """<최고 단계> 효과 <1>개와  <최하 단계> 효과 <1>개의 단계를 뒤바꿔주지."""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        state = state.deepcopy()
+
+        original_values = state.board.get_effect_values()
+        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+
+        state.board.set_effect_count(
+            choosed_min_index, original_values[choosed_max_index]
+        )
+        state.board.set_effect_count(
+            choosed_max_index, original_values[choosed_min_index]
+        )
+
+        return state
 
 
 def get_operation_classes() -> list[Type[ElixirOperation]]:

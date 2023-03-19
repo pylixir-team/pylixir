@@ -3,6 +3,7 @@ from typing import Optional, Type
 
 from pylixir.core.base import GameState, Randomness
 from pylixir.core.council import TargetSelector
+from pylixir.data.council.common import choose_max_indices, choose_min_indices
 
 
 class InvalidSelectionException(Exception):
@@ -55,15 +56,7 @@ class MinValueSelector(TargetSelector):
         if self.target_condition != 0:
             raise InvalidSelectionException("Invalid proposed selector")
 
-        availabla_indices = state.board.mutable_indices()
-        minimum_value = min([state.board.get(idx).value for idx in availabla_indices])
-
-        candidates = [
-            idx
-            for idx in availabla_indices
-            if state.board.get(idx).value == minimum_value
-        ]  # since tatget_condition starts with 1
-        return randomness.shuffle(candidates)[: self.count]
+        return choose_min_indices(state.board, randomness, count=self.count)
 
     def is_valid(self, state: GameState) -> bool:
         return True
@@ -76,15 +69,7 @@ class MaxValueSelector(TargetSelector):
         if self.target_condition != 0:
             raise InvalidSelectionException("Invalid proposed selector")
 
-        availabla_indices = state.board.mutable_indices()
-        minimum_value = max([state.board.get(idx).value for idx in availabla_indices])
-
-        candidates = [
-            idx
-            for idx in availabla_indices
-            if state.board.get(idx).value == minimum_value
-        ]  # since tatget_condition starts with 1
-        return randomness.shuffle(candidates)[: self.count]
+        return choose_max_indices(state.board, randomness, count=self.count)
 
     def is_valid(self, state: GameState) -> bool:
         return True
