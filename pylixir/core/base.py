@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import abc
 import enum
-from typing import Optional
+from typing import Any
 
 import pydantic
-
-MAX_TURN_COUNT = 13
 
 
 class Randomness(metaclass=abc.ABCMeta):
@@ -30,6 +28,10 @@ class Randomness(metaclass=abc.ABCMeta):
     def weighted_sampling(self, probs: list[float]) -> int:
         ...
 
+    @abc.abstractmethod
+    def weighted_sampling_target(self, probs: list[float], target: list[Any]) -> int:
+        ...
+
     def redistribute(self, basis: list[int], count: int, max_count: int) -> list[int]:
         result = list(basis)
         desired_sum = sum(basis) + count
@@ -44,11 +46,6 @@ class Randomness(metaclass=abc.ABCMeta):
         return result
 
 
-class Decision(pydantic.BaseModel):  # UIState
-    sage_index: int
-    effect_index: Optional[int]
-
-
 class MutationTarget(enum.Enum):
     prob = "prob"
     lucky_ratio = "lucky_ratio"
@@ -61,6 +58,12 @@ class Mutation(pydantic.BaseModel):
     index: int
     value: float
     remain_turn: int
+
+    def elapse_turn(self) -> None:
+        self.remain_turn -= 1
+
+    def is_expired(self) -> bool:
+        return self.remain_turn <= 0
 
 
 class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
@@ -77,13 +80,6 @@ class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
 
     def is_mutable(self) -> bool:
         return not self.locked and self.value < self.max_value
-
-
-class GamePhase(enum.Enum):
-    option = "option"
-    council = "council"
-    enchant = "enchant"
-    done = "done"
 
 
 MAX_EFFECT_COUNT = 11
@@ -133,40 +129,15 @@ class Board(pydantic.BaseModel):
 class Enchanter(pydantic.BaseModel):
     _mutations: list[Mutation] = pydantic.PrivateAttr(default_factory=list)
     size: int = 5
-    turn_left: int = MAX_TURN_COUNT
-    total_turn: int = MAX_TURN_COUNT
 
-    def enchant(self, locked: list[int], randomness: Randomness) -> list[int]:
-        return self.get_enchant_result(
-            self.query_enchant_prob(locked),
-            self.query_lucky_ratio(),
-            self.get_enchant_effect_count(),
-            self.get_enchant_amount(),
-            randomness,
-        )
+    def elapse_turn(self) -> None:
+        mutations_left = []
+        for mutation in self._mutations:
+            mutation.elapse_turn()
+            if not mutation.is_expired():
+                mutations_left.append(mutation)
 
-    def get_enchant_result(
-        self,
-        prob: list[float],
-        lucky_ratio: list[float],
-        count: int,
-        amount: int,
-        randomness: Randomness,
-    ) -> list[int]:
-        masked_prob = list(prob)
-        result = [0 for _ in range(self.size)]
-
-        for _ in range(count):
-            target_index = randomness.weighted_sampling(masked_prob)
-            # add result as amount
-            result[target_index] += amount
-            if randomness.binomial(lucky_ratio[target_index]):
-                result[target_index] += 1
-
-            # pick and prevent duplicated sampling
-            masked_prob[target_index] = 0
-
-        return result
+        self._mutations = mutations_left
 
     def get_enchant_amount(self) -> int:
         for mutation in self._mutations:
@@ -263,32 +234,3 @@ class Enchanter(pydantic.BaseModel):
                 remain_turn=1,
             )
         )
-
-    def consume_turn(self, count: int) -> None:
-        self.turn_left -= count
-
-    def get_current_turn(self) -> int:
-        return self.total_turn - self.turn_left
-
-
-class GameState(pydantic.BaseModel):
-    phase: GamePhase
-    reroll_left: int
-    board: Board
-    enchanter: Enchanter = pydantic.Field(default_factory=Enchanter)
-
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "forbid"
-
-    def deepcopy(self) -> GameState:
-        return self.copy(deep=True)
-
-    def modify_reroll(self, amount: int) -> None:
-        self.reroll_left += amount
-
-    def requires_lock(self) -> bool:
-        locked_effect_count = len(self.board.locked_indices())
-        required_locks = 3 - locked_effect_count
-
-        return self.enchanter.turn_left <= required_locks

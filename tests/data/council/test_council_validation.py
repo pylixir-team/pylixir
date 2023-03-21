@@ -1,7 +1,7 @@
 import pytest
 
-from pylixir.core.base import GameState
-from pylixir.core.council import Council
+from pylixir.application.council import Council
+from pylixir.core.state import GameState
 
 
 @pytest.mark.parametrize(
@@ -32,6 +32,6 @@ def test_turn_in_range(
         type="common",
     )
 
-    clean_state.enchanter.consume_turn(target_turn)
+    clean_state.progress.spent_turn(target_turn)
 
     assert council.is_valid(clean_state) == expected

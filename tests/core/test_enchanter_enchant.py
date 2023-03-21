@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import Enchanter
+from pylixir.application.enchant import EnchantCommand
 from tests.randomness import DeterministicRandomness
 
 
@@ -15,11 +15,11 @@ from tests.randomness import DeterministicRandomness
     ],
 )
 def test_single_enchant(
-    clean_enchanter: Enchanter,
+    enchant_command: EnchantCommand,
     enchant_random_numbers: list[float],
     expected: list[int],
 ) -> None:
-    result = clean_enchanter.get_enchant_result(
+    result = enchant_command.get_enchant_result(
         [0.2, 0.2, 0.2, 0.2, 0.2],
         [0.1, 0.1, 0.1, 0.1, 0.1],
         1,
@@ -40,11 +40,11 @@ def test_single_enchant(
     ],
 )
 def test_complex_prob_enchant(
-    clean_enchanter: Enchanter,
+    enchant_command: EnchantCommand,
     enchant_random_numbers: list[float],
     expected: list[int],
 ) -> None:
-    result = clean_enchanter.get_enchant_result(
+    result = enchant_command.get_enchant_result(
         [0.34, 0.13, 0.1, 0.1, 0.33],
         [0.1, 0.1, 0.1, 0.1, 0.1],
         1,
@@ -65,11 +65,11 @@ def test_complex_prob_enchant(
     ],
 )
 def test_lucky_enchant(
-    clean_enchanter: Enchanter,
+    enchant_command: EnchantCommand,
     enchant_random_numbers: list[float],
     expected: list[int],
 ) -> None:
-    result = clean_enchanter.get_enchant_result(
+    result = enchant_command.get_enchant_result(
         [0.34, 0.13, 0.1, 0.1, 0.33],
         [0.1, 0.1, 0.1, 0.1, 0.1],
         1,
@@ -89,11 +89,11 @@ def test_lucky_enchant(
     ],
 )
 def test_multiple_enchant(
-    clean_enchanter: Enchanter,
+    enchant_command: EnchantCommand,
     enchant_random_numbers: list[float],
     expected: list[int],
 ) -> None:
-    result = clean_enchanter.get_enchant_result(
+    result = enchant_command.get_enchant_result(
         [0.34, 0.13, 0.1, 0.1, 0.33],
         [0.1, 0.1, 0.1, 0.1, 0.1],
         2,
@@ -114,11 +114,11 @@ def test_multiple_enchant(
     ],
 )
 def test_more_enchant(
-    clean_enchanter: Enchanter,
+    enchant_command: EnchantCommand,
     enchant_random_numbers: list[float],
     expected: list[int],
 ) -> None:
-    result = clean_enchanter.get_enchant_result(
+    result = enchant_command.get_enchant_result(
         [0.2, 0.2, 0.2, 0.2, 0.2],
         [0.1, 0.1, 0.1, 0.1, 0.1],
         1,
@@ -143,12 +143,12 @@ def test_more_enchant(
     ],
 )
 def test_zero(
-    clean_enchanter: Enchanter,
+    enchant_command: EnchantCommand,
     enchant_random_numbers: list[float],
     prob: list[float],
     expected: list[int],
 ) -> None:
-    result = clean_enchanter.get_enchant_result(
+    result = enchant_command.get_enchant_result(
         prob,
         [0.1, 0.1, 0.1, 0.1, 0.1],
         1,

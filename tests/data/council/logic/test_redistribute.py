@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import GameState
+from pylixir.core.state import GameState
 from pylixir.data.council.common import choose_max_indices, choose_min_indices
 from pylixir.data.council.operation import (
     RedistributeAll,
@@ -160,19 +160,21 @@ def test_redistribute_max_to_others(
         remain_turn=1,
     )
 
-    total_run_count = 100
+    total_run_count = 300
     original_values = step_state.board.get_effect_values()
-
+    original_state = step_state.deepcopy()
     correct_count, equal_count = 0, 0
 
     for random_number in range(total_run_count):
+        state = original_state.deepcopy()
+
         max_index = choose_max_indices(
-            step_state.board, randomness=DeterministicRandomness(42), count=1
+            state.board, randomness=DeterministicRandomness(42), count=1
         )[
             0
         ]  # min index in step_state is always one
         changed_state = operation.reduce(
-            step_state, [], DeterministicRandomness(random_number)
+            state, [], DeterministicRandomness(random_number)
         )
         changed_values = changed_state.board.get_effect_values()
 

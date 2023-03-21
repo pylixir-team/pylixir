@@ -1,4 +1,4 @@
-from pylixir.core.base import GameState
+from pylixir.core.state import GameState
 
 
 def assert_effect_changed(

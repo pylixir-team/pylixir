@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import GameState
+from pylixir.core.state import GameState
 from pylixir.data.council.operation import IncreaseReroll
 from tests.randomness import DeterministicRandomness
 
@@ -17,4 +17,7 @@ def test_increase_reroll(reroll_amount: int, abundant_state: GameState) -> None:
         abundant_state, [], DeterministicRandomness(0.3456)
     )
 
-    assert changed_state.reroll_left == abundant_state.reroll_left + reroll_amount
+    assert (
+        changed_state.progress.get_reroll_left()
+        == abundant_state.progress.get_reroll_left() + reroll_amount
+    )

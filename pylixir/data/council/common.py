@@ -5,10 +5,10 @@ def choose_max_indices(
     board: Board, randomness: Randomness, count: int = 1
 ) -> list[int]:
     availabla_indices = board.mutable_indices()
-    minimum_value = max([board.get(idx).value for idx in availabla_indices])
+    maximum_value = max([board.get(idx).value for idx in availabla_indices])
 
     candidates = [
-        idx for idx in availabla_indices if board.get(idx).value == minimum_value
+        idx for idx in availabla_indices if board.get(idx).value == maximum_value
     ]  # since tatget_condition starts with 1
     return randomness.shuffle(candidates)[:count]
 

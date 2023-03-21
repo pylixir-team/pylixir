@@ -1,6 +1,6 @@
 from typing import Type
 
-from pylixir.core.council import ElixirOperation, TargetSelector
+from pylixir.application.council import ElixirOperation, TargetSelector
 
 
 class ElixirOperationLoader:

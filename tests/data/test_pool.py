@@ -1,17 +1,19 @@
 import pytest
 
-from pylixir.core.base import GameState
-from pylixir.core.council import CouncilPool, CouncilType, Sage
+from pylixir.application.council import CouncilType
+from pylixir.core.committee import Sage
 from pylixir.core.randomness import SeededRandomness
+from pylixir.core.state import GameState
+from pylixir.data.council_pool import ConcreteCouncilPool
 from pylixir.data.pool import get_ingame_council_pool
 
 
 @pytest.fixture(name="council_pool")
-def fixture_council_pool() -> CouncilPool:
+def fixture_council_pool() -> ConcreteCouncilPool:
     return get_ingame_council_pool(skip=True)
 
 
-def test_pool_size_exact(council_pool: CouncilPool) -> None:
+def test_pool_size_exact(council_pool: ConcreteCouncilPool) -> None:
     assert len(council_pool) == 294
 
 
@@ -28,14 +30,16 @@ def test_pool_size_exact(council_pool: CouncilPool) -> None:
     ],
 )
 def test_get_council(
-    council_pool: CouncilPool, council_type: CouncilType, count: int
+    council_pool: ConcreteCouncilPool, council_type: CouncilType, count: int
 ) -> None:
     councils = council_pool.get_available_councils(1, council_type)
 
     assert len(councils) > count
 
 
-def test_sample_council(council_pool: CouncilPool, abundant_state: GameState) -> None:
+def test_sample_council(
+    council_pool: ConcreteCouncilPool, abundant_state: GameState
+) -> None:
     for seed in range(50):
         randomness = SeededRandomness(seed)
         council_pool.sample_council(

@@ -1,7 +1,8 @@
 import pytest
 
-from pylixir.core.base import GameState, Randomness
-from pylixir.core.council import ElixirOperation
+from pylixir.application.council import ElixirOperation
+from pylixir.core.base import Randomness
+from pylixir.core.state import GameState
 from pylixir.data.loader import ElixirOperationLoader
 
 

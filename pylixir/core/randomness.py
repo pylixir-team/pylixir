@@ -1,4 +1,5 @@
 from random import Random
+from typing import Any
 
 from pylixir.core.base import Randomness
 
@@ -24,6 +25,13 @@ class SeededRandomness(Randomness):
     def weighted_sampling(self, probs: list[float]) -> int:
         return self._rng.choices(
             list(range(len(probs))),
+            weights=probs,
+            k=1,
+        )[0]
+
+    def weighted_sampling_target(self, probs: list[float], target: list[Any]) -> int:
+        return self._rng.choices(
+            target,
             weights=probs,
             k=1,
         )[0]

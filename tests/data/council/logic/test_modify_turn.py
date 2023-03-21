@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.core.base import GameState
+from pylixir.core.state import GameState
 from pylixir.data.council.operation import DecreaseTurnLeft
 from tests.randomness import DeterministicRandomness
 
@@ -17,6 +17,6 @@ def test_decrease_turn(turn_count: int, abundant_state: GameState) -> None:
         abundant_state, [], DeterministicRandomness(0.3456)
     )
     assert (
-        changed_state.enchanter.turn_left
-        == abundant_state.enchanter.turn_left - turn_count
+        changed_state.progress.get_turn_left()
+        == abundant_state.progress.get_turn_left() - turn_count
     )

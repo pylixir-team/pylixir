@@ -1,6 +1,7 @@
 import pytest
 
-from pylixir.core.base import GameState, Mutation, MutationTarget
+from pylixir.core.base import Mutation, MutationTarget
+from pylixir.core.state import GameState
 from pylixir.data.council.operation import (
     MutateLuckyRatio,
     MutateProb,

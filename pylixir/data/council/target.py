@@ -1,8 +1,9 @@
 import enum
 from typing import Optional, Type
 
-from pylixir.core.base import GameState, Randomness
-from pylixir.core.council import TargetSelector
+from pylixir.application.council import TargetSelector
+from pylixir.core.base import Randomness
+from pylixir.core.state import GameState
 from pylixir.data.council.common import choose_max_indices, choose_min_indices
 
 
