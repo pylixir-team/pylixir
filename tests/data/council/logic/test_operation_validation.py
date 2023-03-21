@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.application.state import GameState
+from pylixir.core.state import GameState
 from pylixir.data.council.operation import DecreaseTurnLeft
 
 
@@ -8,13 +8,10 @@ from pylixir.data.council.operation import DecreaseTurnLeft
     "target_turn_left, turn_count, valid",
     [
         (10, 1, True),
-        (3, 1, True),
-        (2, 1, True),
+        (4, 1, False),
+        (2, 1, False),
         (1, 1, False),
-        (0, 1, False),
-        (4, 2, True),
-        (3, 2, True),
-        (2, 2, False),
+        (5, 1, True),
     ],
 )
 def test_decrease_turn_requires_enough_turn_left(

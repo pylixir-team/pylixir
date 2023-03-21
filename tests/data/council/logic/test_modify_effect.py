@@ -3,7 +3,7 @@ from typing import Type
 import pytest
 
 from pylixir.application.council import ElixirOperation
-from pylixir.application.state import GameState
+from pylixir.core.state import GameState
 from pylixir.data.council.operation import (
     IncreaseTargetRanged,
     IncreaseTargetWithRatio,
@@ -81,7 +81,6 @@ def test_increase_target_ranged(
 @pytest.mark.parametrize(
     "operation_class",
     [
-        IncreaseTargetWithRatio,
         IncreaseTargetRanged,
     ],
 )

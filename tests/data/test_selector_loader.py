@@ -3,8 +3,8 @@ from typing import Optional
 import pytest
 
 from pylixir.application.council import TargetSelector
-from pylixir.application.state import GameState
 from pylixir.core.base import Randomness
+from pylixir.core.state import GameState
 from pylixir.data.loader import ElixirTargetSelectorLoader
 
 

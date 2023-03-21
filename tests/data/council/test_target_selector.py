@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.application.state import GameState
+from pylixir.core.state import GameState
 from pylixir.data.council.target import (
     LteValueSelector,
     MaxValueSelector,

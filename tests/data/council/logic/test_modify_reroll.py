@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.application.state import GameState
+from pylixir.core.state import GameState
 from pylixir.data.council.operation import IncreaseReroll
 from tests.randomness import DeterministicRandomness
 

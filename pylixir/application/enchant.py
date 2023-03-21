@@ -1,7 +1,7 @@
 import pydantic
 
-from pylixir.application.state import GameState
-from pylixir.core.base import Decision, Randomness
+from pylixir.core.base import Randomness
+from pylixir.core.state import GameState
 
 
 class EnchantCommand(pydantic.BaseModel):

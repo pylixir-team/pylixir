@@ -1,10 +1,18 @@
-from pylixir.application.council import CouncilPool, Sage, SageCommittee
-from pylixir.application.state import GameState
-from pylixir.core.base import Board, Decision, Effect, Randomness
+from pylixir.core.base import Board, Effect
+from pylixir.core.committee import Sage, SageCommittee
 from pylixir.core.progress import GamePhase, Progress
+from pylixir.core.state import CouncilQuery, GameState
 
 
-def state_initializer(max_value=10) -> GameState:
+def create_empty_committee() -> SageCommittee:
+    sages = [Sage(power=0, is_removed=False, slot=idx) for idx in range(3)]
+
+    return SageCommittee(
+        sages=sages,
+    )
+
+
+def state_initializer(max_value: int = 10) -> GameState:
     return GameState(
         progress=Progress(
             phase=GamePhase.council,
@@ -20,15 +28,6 @@ def state_initializer(max_value=10) -> GameState:
             ],
             mutations=[],
         ),
-    )
-
-
-def create_empty_committee(
-    pool: CouncilPool, state: GameState, randomness: Randomness
-) -> SageCommittee:
-    sages = [Sage(power=0, is_removed=False, slot=idx) for idx in range(3)]
-
-    return SageCommittee(
-        sages=sages,
-        councils=pool.get_council_set(state, sages, randomness, is_reroll=False),
+        committee=create_empty_committee(),
+        suggestions=[CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")],
     )

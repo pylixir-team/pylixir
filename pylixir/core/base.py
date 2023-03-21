@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import enum
-from typing import Optional
+from typing import Any
 
 import pydantic
 
@@ -28,6 +28,10 @@ class Randomness(metaclass=abc.ABCMeta):
     def weighted_sampling(self, probs: list[float]) -> int:
         ...
 
+    @abc.abstractmethod
+    def weighted_sampling_target(self, probs: list[float], target: list[Any]) -> int:
+        ...
+
     def redistribute(self, basis: list[int], count: int, max_count: int) -> list[int]:
         result = list(basis)
         desired_sum = sum(basis) + count
@@ -42,11 +46,6 @@ class Randomness(metaclass=abc.ABCMeta):
         return result
 
 
-class Decision(pydantic.BaseModel):  # UIState
-    sage_index: int
-    effect_index: Optional[int]
-
-
 class MutationTarget(enum.Enum):
     prob = "prob"
     lucky_ratio = "lucky_ratio"
@@ -59,6 +58,12 @@ class Mutation(pydantic.BaseModel):
     index: int
     value: float
     remain_turn: int
+
+    def elapse_turn(self) -> None:
+        self.remain_turn -= 1
+
+    def is_expired(self) -> bool:
+        return self.remain_turn <= 0
 
 
 class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
@@ -124,6 +129,15 @@ class Board(pydantic.BaseModel):
 class Enchanter(pydantic.BaseModel):
     _mutations: list[Mutation] = pydantic.PrivateAttr(default_factory=list)
     size: int = 5
+
+    def elapse_turn(self) -> None:
+        mutations_left = []
+        for mutation in self._mutations:
+            mutation.elapse_turn()
+            if not mutation.is_expired():
+                mutations_left.append(mutation)
+
+        self._mutations = mutations_left
 
     def get_enchant_amount(self) -> int:
         for mutation in self._mutations:

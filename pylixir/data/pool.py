@@ -6,9 +6,10 @@ from pathlib import Path
 
 import pydantic
 
-from pylixir.application.council import Council, CouncilPool, Logic
+from pylixir.application.council import Council, Logic
 from pylixir.data.council.operation import get_operation_classes
 from pylixir.data.council.target import get_target_classes
+from pylixir.data.council_pool import ConcreteCouncilPool
 from pylixir.data.loader import ElixirOperationLoader, ElixirTargetSelectorLoader
 
 
@@ -80,7 +81,7 @@ class CouncilLoader:
 
 def _get_pool_from_file_and_loader(
     resource_file_path: str, council_loader: CouncilLoader, skip: bool
-) -> CouncilPool:
+) -> ConcreteCouncilPool:
     with open(resource_file_path, encoding="utf-8") as f:
         raws = json.load(f)
 
@@ -95,14 +96,14 @@ def _get_pool_from_file_and_loader(
 
             raise e
 
-    return CouncilPool(councils)
+    return ConcreteCouncilPool(councils)
 
 
 def get_ingame_resource_path() -> str:
     return str(Path(os.path.dirname(__file__)) / "resource" / "council.json")
 
 
-def get_ingame_council_pool(skip: bool = False) -> CouncilPool:
+def get_ingame_council_pool(skip: bool = False) -> ConcreteCouncilPool:
     return _get_pool_from_file_and_loader(
         get_ingame_resource_path(),
         CouncilLoader(

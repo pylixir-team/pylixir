@@ -1,8 +1,9 @@
 import pytest
 
-from pylixir.application.state import GameState
 from pylixir.core.base import Board, Effect
+from pylixir.core.committee import Sage, SageCommittee
 from pylixir.core.progress import GamePhase, Progress
+from pylixir.core.state import CouncilQuery, GameState
 
 
 @pytest.fixture
@@ -22,6 +23,10 @@ def clean_state() -> GameState:
             ],
             mutations=[],
         ),
+        committee=SageCommittee(
+            sages=[Sage(power=0, is_removed=False, slot=idx) for idx in range(3)]
+        ),
+        suggestions=[CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")],
     )
 
 
@@ -42,6 +47,10 @@ def abundant_state() -> GameState:
             ],
             mutations=[],
         ),
+        committee=SageCommittee(
+            sages=[Sage(power=0, is_removed=False, slot=idx) for idx in range(3)]
+        ),
+        suggestions=[CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")],
     )
 
 
@@ -62,4 +71,8 @@ def step_state() -> GameState:
             ],
             mutations=[],
         ),
+        committee=SageCommittee(
+            sages=[Sage(power=0, is_removed=False, slot=idx) for idx in range(3)]
+        ),
+        suggestions=[CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")],
     )

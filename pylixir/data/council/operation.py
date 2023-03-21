@@ -1,8 +1,8 @@
 from typing import Type
 
 from pylixir.application.council import ElixirOperation
-from pylixir.application.state import GameState
 from pylixir.core.base import Randomness
+from pylixir.core.state import GameState
 from pylixir.data.council.common import (
     choose_max_indices,
     choose_min_indices,
@@ -28,11 +28,12 @@ class MutateProb(AlwaysValidOperation):
         targets: list[int],
         randomness: Randomness,
     ) -> GameState:
-        state = state.deepcopy()
+        enchanter = state.enchanter.copy()
 
         for index in targets:
-            state.enchanter.mutate_prob(index, self.value[0], self.remain_turn)
+            enchanter.mutate_prob(index, self.value[0] / 10000, self.remain_turn)
 
+        state = state.copy(update=dict(enchanter=enchanter))
         return state
 
 
@@ -42,10 +43,12 @@ class MutateLuckyRatio(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        enchanter = state.enchanter.copy()
 
         for index in targets:
-            state.enchanter.mutate_lucky_ratio(index, self.value[0], self.remain_turn)
+            enchanter.mutate_lucky_ratio(index, self.value[0] / 10000, self.remain_turn)
+
+        state = state.copy(update=dict(enchanter=enchanter))
 
         return state
 
@@ -56,14 +59,13 @@ class IncreaseTargetWithRatio(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        if len(targets) != 1:
-            raise TargetSizeMismatchException
+        board = state.board.copy()
 
-        target = targets[0]
-        state = state.deepcopy()
+        for target in targets:
+            if randomness.binomial(self.ratio / 10000):
+                board.modify_effect_count(target, self.value[0])
 
-        if randomness.binomial(self.ratio / 10000):
-            state.board.modify_effect_count(target, self.value[0])
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -78,12 +80,14 @@ class IncreaseTargetRanged(AlwaysValidOperation):
             raise TargetSizeMismatchException
 
         target = targets[0]
-        state = state.deepcopy()
+        board = state.board.copy()
 
         diff_min, diff_max = self.value
         diff = randomness.uniform_int(diff_min, diff_max)
 
-        state.board.modify_effect_count(target, diff)
+        board.modify_effect_count(target, diff)
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -94,13 +98,17 @@ class DecreaseTurnLeft(ElixirOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
-        state.progress.spent_turn(self.consuming_turn)
+        progress = state.progress.copy()
+        progress.spent_turn(self.consuming_turn)
+        state = state.copy(update=dict(progress=progress))
 
         return state
 
     def is_valid(self, state: GameState) -> bool:
-        return state.progress.get_turn_left() >= self.consuming_turn + 1
+        return (
+            state.progress.get_turn_left()
+            > self.consuming_turn + len(state.board.locked_indices()) + 3
+        )
 
     @property
     def consuming_turn(self) -> int:
@@ -113,11 +121,11 @@ class ShuffleAll(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy()
 
-        original_values = state.board.get_effect_values()
-        unlocked_indices = state.board.unlocked_indices()
-        locked_indices = state.board.locked_indices()
+        original_values = board.get_effect_values()
+        unlocked_indices = board.unlocked_indices()
+        locked_indices = board.locked_indices()
 
         starting = unlocked_indices + locked_indices
 
@@ -125,8 +133,9 @@ class ShuffleAll(AlwaysValidOperation):
         ending = shuffled_indices + locked_indices
 
         for start, end in zip(starting, ending):
-            state.board.set_effect_count(start, original_values[end])
+            board.set_effect_count(start, original_values[end])
 
+        state = state.copy(update=dict(board=board))
         return state
 
 
@@ -139,11 +148,14 @@ class SetEnchantTargetAndAmount(AlwaysValidOperation):
         if len(targets) != 1:
             raise TargetSizeMismatchException
 
-        state = state.deepcopy()
         target = targets[0]
 
-        state.enchanter.mutate_prob(target, 1.0, self.remain_turn)
-        state.enchanter.increase_enchant_amount(self.value[0])
+        enchanter = state.enchanter.copy()
+
+        enchanter.mutate_prob(target, 1.0, self.remain_turn)
+        enchanter.increase_enchant_amount(self.value[0])
+
+        state = state.copy(update=dict(enchanter=enchanter))
 
         return state
 
@@ -154,13 +166,15 @@ class UnlockAndLockOther(ElixirOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy(deep=True)
 
-        will_unlock = randomness.pick(state.board.locked_indices())
-        will_lock = randomness.pick(state.board.unlocked_indices())
+        will_unlock = randomness.pick(board.locked_indices())
+        will_lock = randomness.pick(board.unlocked_indices())
 
-        state.board.lock(will_lock)
-        state.board.unlock(will_unlock)
+        board.lock(will_lock)
+        board.unlock(will_unlock)
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -175,7 +189,7 @@ class ChangeEffect(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        return state.deepcopy()
+        return state
 
 
 class LockTarget(ElixirOperation):
@@ -187,10 +201,11 @@ class LockTarget(ElixirOperation):
         if len(targets) != 1:
             raise TargetSizeMismatchException
 
-        state = state.deepcopy()
         target = targets[0]
+        board = state.board.copy()
 
-        state.board.lock(target)
+        board.lock(target)
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -204,8 +219,10 @@ class IncreaseReroll(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
-        state.progress.modify_reroll(self.value[0])
+        progress = state.progress.copy()
+
+        progress.modify_reroll(self.value[0])
+        state = state.copy(update=dict(progress=progress))
 
         return state
 
@@ -216,7 +233,7 @@ class DecreasePrice(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        return state.deepcopy()
+        return state
 
 
 class Restart(AlwaysValidOperation):
@@ -225,7 +242,7 @@ class Restart(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        return state.deepcopy()  ## TODO
+        return state  ## TODO
 
 
 class SetEnchantIncreaseAmount(AlwaysValidOperation):
@@ -234,8 +251,10 @@ class SetEnchantIncreaseAmount(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
-        state.enchanter.increase_enchant_amount(self.value[0])
+        enchanter = state.enchanter.copy()
+
+        enchanter.increase_enchant_amount(self.value[0])
+        state = state.copy(update=dict(enchanter=enchanter))
 
         return state
 
@@ -246,8 +265,10 @@ class SetEnchantEffectCount(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
-        state.enchanter.change_enchant_effect_count(self.value[0])
+        enchanter = state.enchanter.copy()
+
+        enchanter.change_enchant_effect_count(self.value[0])
+        state = state.copy(update=dict(enchanter=enchanter))
 
         return state
 
@@ -262,10 +283,12 @@ class SetValueRanged(AlwaysValidOperation):
             raise TargetSizeMismatchException
 
         target = targets[0]
-        state = state.deepcopy()
+        board = state.board.copy()
+
         value_min, value_max = self.value
         result = randomness.uniform_int(value_min, value_max)
-        state.board.set_effect_count(target, result)
+        board.set_effect_count(target, result)
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -274,20 +297,21 @@ class RedistributeAll(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy(deep=True)
 
-        unlocked_indices = state.board.unlocked_indices()
+        unlocked_indices = board.unlocked_indices()
 
-        candidates = [state.board.get(idx).value for idx in unlocked_indices]
+        candidates = [board.get(idx).value for idx in unlocked_indices]
         redistributed_values = randomness.redistribute(
             [0 for idx in range(len(candidates))],
             sum(candidates),
-            state.board.get_max_value(),
+            board.get_max_value(),
         )
 
         for effect_idx, value in zip(unlocked_indices, redistributed_values):
-            state.board.set_effect_count(effect_idx, value)
+            board.set_effect_count(effect_idx, value)
 
+        state = state.copy(update=dict(board=board))
         return state
 
 
@@ -302,23 +326,25 @@ class RedistributeSelectedToOthers(AlwaysValidOperation):
 
         target = targets[0]
 
-        state = state.deepcopy()
+        board = state.board.copy()
 
         redistribute_target_indices = [
-            idx for idx in state.board.unlocked_indices() if idx != target
+            idx for idx in board.unlocked_indices() if idx != target
         ]
 
-        candidates = [state.board.get(idx).value for idx in redistribute_target_indices]
+        candidates = [board.get(idx).value for idx in redistribute_target_indices]
         redistributed_values = randomness.redistribute(
             candidates,
-            state.board.get_effect_values()[target],
-            state.board.get_max_value(),
+            board.get_effect_values()[target],
+            board.get_max_value(),
         )
 
         for effect_idx, value in zip(redistribute_target_indices, redistributed_values):
-            state.board.set_effect_count(effect_idx, value)
+            board.set_effect_count(effect_idx, value)
 
-        state.board.set_effect_count(target, 0)
+        board.set_effect_count(target, 0)
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -332,23 +358,25 @@ class ShiftAll(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy()
 
         direction_offset = -1 if (self.value[0] == 0) else 1
 
-        unlocked_indices = state.board.unlocked_indices()
+        unlocked_indices = board.unlocked_indices()
         permuted_indices = [
             unlocked_indices[(idx + direction_offset) % len(unlocked_indices)]
             for idx in range(len(unlocked_indices))
         ]
 
-        original_indices = unlocked_indices + state.board.locked_indices()
-        target_indices = permuted_indices + state.board.locked_indices()
+        original_indices = unlocked_indices + board.locked_indices()
+        target_indices = permuted_indices + board.locked_indices()
 
-        original_values = state.board.get_effect_values()
+        original_values = board.get_effect_values()
 
         for original_index, target_index in zip(original_indices, target_indices):
-            state.board.set_effect_count(target_index, original_values[original_index])
+            board.set_effect_count(target_index, original_values[original_index])
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -359,13 +387,15 @@ class SwapValues(ElixirOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
-        original_values = state.board.get_effect_values()
+        board = state.board.copy()
+        original_values = board.get_effect_values()
 
         a_idx, b_idx = self.value
 
-        state.board.set_effect_count(a_idx, original_values[b_idx])
-        state.board.set_effect_count(b_idx, original_values[a_idx])
+        board.set_effect_count(a_idx, original_values[b_idx])
+        board.set_effect_count(b_idx, original_values[a_idx])
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -379,18 +409,16 @@ class SwapMinMax(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy()
 
-        original_values = state.board.get_effect_values()
-        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
-        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+        original_values = board.get_effect_values()
+        choosed_min_index = choose_min_indices(board, randomness, count=1)[0]
+        choosed_max_index = choose_max_indices(board, randomness, count=1)[0]
 
-        state.board.set_effect_count(
-            choosed_min_index, original_values[choosed_max_index]
-        )
-        state.board.set_effect_count(
-            choosed_max_index, original_values[choosed_min_index]
-        )
+        board.set_effect_count(choosed_min_index, original_values[choosed_max_index])
+        board.set_effect_count(choosed_max_index, original_values[choosed_min_index])
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -401,7 +429,12 @@ class Exhaust(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        return state.deepcopy()
+        committee = state.committee.copy()
+        state.committee.set_exhaust(self.value[0] - 1)
+
+        state = state.copy(update=dict(committee=committee))
+
+        return state
 
 
 class IncreaseMaxAndDecreaseTarget(AlwaysValidOperation):
@@ -410,14 +443,14 @@ class IncreaseMaxAndDecreaseTarget(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy()
 
-        original_values = state.board.get_effect_values()
-        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+        original_values = board.get_effect_values()
+        choosed_max_index = choose_max_indices(board, randomness, count=1)[0]
 
         max_value_increment, target_increment = self.value
 
-        state.board.set_effect_count(
+        board.set_effect_count(
             choosed_max_index, original_values[choosed_max_index] + max_value_increment
         )
 
@@ -425,12 +458,14 @@ class IncreaseMaxAndDecreaseTarget(AlwaysValidOperation):
             # prevents increase-decrease collision
             if target_idx == choosed_max_index:
                 target_idx = choose_random_indices_with_exclusion(
-                    state.board, randomness, excludes=[choosed_max_index]
+                    board, randomness, excludes=[choosed_max_index]
                 )
 
-            state.board.set_effect_count(
+            board.set_effect_count(
                 target_idx, original_values[target_idx] + target_increment
             )
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -441,14 +476,14 @@ class IncreaseMinAndDecreaseTarget(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy()
 
-        original_values = state.board.get_effect_values()
-        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+        original_values = board.get_effect_values()
+        choosed_min_index = choose_min_indices(board, randomness, count=1)[0]
 
         min_value_increment, target_increment = self.value
 
-        state.board.set_effect_count(
+        board.set_effect_count(
             choosed_min_index, original_values[choosed_min_index] + min_value_increment
         )
 
@@ -456,12 +491,14 @@ class IncreaseMinAndDecreaseTarget(AlwaysValidOperation):
             # prevents increase-decrease collision
             if target_idx == choosed_min_index:
                 target_idx = choose_random_indices_with_exclusion(
-                    state.board, randomness, excludes=[choosed_min_index]
+                    board, randomness, excludes=[choosed_min_index]
                 )
 
-            state.board.set_effect_count(
+            board.set_effect_count(
                 target_idx, original_values[target_idx] + target_increment
             )
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -470,24 +507,26 @@ class RedistributeMinToOthers(ElixirOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy()
 
-        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
+        choosed_min_index = choose_min_indices(board, randomness, count=1)[0]
         redistribute_target_indices = [
-            idx for idx in state.board.unlocked_indices() if idx != choosed_min_index
+            idx for idx in board.unlocked_indices() if idx != choosed_min_index
         ]
 
-        candidates = [state.board.get(idx).value for idx in redistribute_target_indices]
+        candidates = [board.get(idx).value for idx in redistribute_target_indices]
         redistributed_values = randomness.redistribute(
             candidates,
-            state.board.get_effect_values()[choosed_min_index],
-            state.board.get_max_value(),
+            board.get_effect_values()[choosed_min_index],
+            board.get_max_value(),
         )
 
         for effect_idx, value in zip(redistribute_target_indices, redistributed_values):
-            state.board.set_effect_count(effect_idx, value)
+            board.set_effect_count(effect_idx, value)
 
-        state.board.set_effect_count(choosed_min_index, 0)
+        board.set_effect_count(choosed_min_index, 0)
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -501,24 +540,26 @@ class RedistributeMaxToOthers(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy(deep=True)
 
-        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+        choosed_max_index = choose_max_indices(board, randomness, count=1)[0]
         redistribute_target_indices = [
-            idx for idx in state.board.unlocked_indices() if idx != choosed_max_index
+            idx for idx in board.unlocked_indices() if idx != choosed_max_index
         ]
 
-        candidates = [state.board.get(idx).value for idx in redistribute_target_indices]
+        candidates = [board.get(idx).value for idx in redistribute_target_indices]
         redistributed_values = randomness.redistribute(
             candidates,
-            state.board.get_effect_values()[choosed_max_index],
-            state.board.get_max_value(),
+            board.get_effect_values()[choosed_max_index],
+            board.get_max_value(),
         )
 
         for effect_idx, value in zip(redistribute_target_indices, redistributed_values):
-            state.board.set_effect_count(effect_idx, value)
+            board.set_effect_count(effect_idx, value)
 
-        state.board.set_effect_count(choosed_max_index, 0)
+        board.set_effect_count(choosed_max_index, 0)
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -527,18 +568,17 @@ class DecreaseMaxAndSwapMinMax(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy()
 
-        original_values = state.board.get_effect_values()
-        choosed_min_index = choose_min_indices(state.board, randomness, count=1)[0]
-        choosed_max_index = choose_max_indices(state.board, randomness, count=1)[0]
+        original_values = board.get_effect_values()
+        choosed_min_index = choose_min_indices(board, randomness, count=1)[0]
+        choosed_max_index = choose_max_indices(board, randomness, count=1)[0]
 
-        state.board.set_effect_count(
+        board.set_effect_count(
             choosed_min_index, original_values[choosed_max_index] - 1
         )
-        state.board.set_effect_count(
-            choosed_max_index, original_values[choosed_min_index]
-        )
+        board.set_effect_count(choosed_max_index, original_values[choosed_min_index])
+        state = state.copy(update=dict(board=board))
 
         return state
 
@@ -547,13 +587,15 @@ class DecreaseFirstTargetAndSwap(ElixirOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        state = state.deepcopy()
+        board = state.board.copy()
 
-        original_values = state.board.get_effect_values()
+        original_values = board.get_effect_values()
         first_target, second_target = self.value
 
-        state.board.set_effect_count(second_target, original_values[first_target] - 1)
-        state.board.set_effect_count(first_target, original_values[second_target])
+        board.set_effect_count(second_target, original_values[first_target] - 1)
+        board.set_effect_count(first_target, original_values[second_target])
+
+        state = state.copy(update=dict(board=board))
 
         return state
 
