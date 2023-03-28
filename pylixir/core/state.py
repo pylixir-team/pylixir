@@ -40,11 +40,5 @@ class GameState(pydantic.BaseModel):
 
         return self.progress.turn_left <= required_locks
 
-    def get_valid_sage_indices(self) -> list[int]:  # TODO: go to view
-        return self.committee.get_valid_slots()
-
-    def get_valid_effect_indices(self) -> list[int]:  # TODO: go to view
-        return self.board.unlocked_indices()
-
 
 Reducer = Callable[[GameState, Randomness], GameState]

@@ -28,7 +28,7 @@ def pick_council(
                 randomness,
             )
     except Exception as e:
-        print(council.descriptions[action.sage_index])
+        #print(council.descriptions[action.sage_index])
         raise e
 
     state.committee.pick(action.sage_index)
