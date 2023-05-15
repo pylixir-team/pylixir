@@ -35,9 +35,7 @@ class ConcreteCouncilPool(CouncilPool):
         return len(self._councils)
 
     def get_index_map(self) -> dict[str, int]:
-        return {
-            self._councils[idx].id: idx for idx in range(len(self))
-        }
+        return {self._councils[idx].id: idx for idx in range(len(self))}
 
     def get_council_queries(
         self, state: GameState, randomness: Randomness, is_reroll: bool = False
@@ -63,30 +61,52 @@ class ConcreteCouncilPool(CouncilPool):
         is_reroll: bool = False,
     ) -> CouncilSet:
         # TODO: protection logic for reroll
-        if is_reroll:
-            pass
-
         sage_a, sage_b, sage_c = sages
 
-        councils = (
-            self.sample_council(state, sage_a, randomness),
-            self.sample_council(state, sage_b, randomness),
-            self.sample_council(state, sage_c, randomness),
-        )
-        return councils
+        if is_reroll:
+            council_1 = self.sample_council(
+                state, sage_a, randomness, [state.suggestions[0].id]
+            )
+            council_2 = self.sample_council(
+                state, sage_b, randomness, [state.suggestions[1].id, council_1.id]
+            )
+            council_3 = self.sample_council(
+                state,
+                sage_c,
+                randomness,
+                [state.suggestions[2].id, council_1.id, council_2.id],
+            )
+        else:
+            council_1 = self.sample_council(state, sage_a, randomness, [])
+            council_2 = self.sample_council(state, sage_b, randomness, [council_1.id])
+            council_3 = self.sample_council(
+                state, sage_c, randomness, [council_1.id, council_2.id]
+            )
+
+        return (council_1, council_2, council_3)
 
     def sample_council(
-        self, state: GameState, sage: Sage, randomness: Randomness
+        self,
+        state: GameState,
+        sage: Sage,
+        randomness: Randomness,
+        forbidden_council_ids: list[str],
     ) -> Council:
+        def _is_valid(target_council: Council) -> bool:
+            return (
+                target_council.is_valid(state)
+                and target_council.id not in forbidden_council_ids
+            )
+
         council_type = self._get_council_type(state, sage)
         candidates, weights = self.get_available_councils(sage.slot, council_type)
 
         for _ in range(self._trials_before_exact_sampling):
             council = randomness.weighted_sampling_target(weights, candidates)
-            if council.is_valid(state):
+            if _is_valid(council):
                 return council
 
-        refined_council = [council for council in candidates if council.is_valid(state)]
+        refined_council = [council for council in candidates if _is_valid(council)]
 
         refined_weights = [float(council.pickup_ratio) for council in refined_council]
         return randomness.weighted_sampling_target(refined_weights, refined_council)

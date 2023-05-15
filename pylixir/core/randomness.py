@@ -1,7 +1,9 @@
 from random import Random
-from typing import Any
+from typing import TypeVar
 
 from pylixir.core.base import Randomness
+
+T = TypeVar("T")
 
 
 class SeededRandomness(Randomness):
@@ -29,7 +31,7 @@ class SeededRandomness(Randomness):
             k=1,
         )[0]
 
-    def weighted_sampling_target(self, probs: list[float], target: list[Any]) -> int:
+    def weighted_sampling_target(self, probs: list[float], target: list[T]) -> T:
         return self._rng.choices(
             target,
             weights=probs,

@@ -1,7 +1,9 @@
 from random import Random
-from typing import Any, Union
+from typing import TypeVar, Union
 
 from pylixir.core.base import Randomness
+
+T = TypeVar("T")
 
 
 class DeterministicRandomness(Randomness):
@@ -48,7 +50,7 @@ class DeterministicRandomness(Randomness):
 
         raise ValueError("random_number cannot be 1")
 
-    def weighted_sampling_target(self, probs: list[float], target: list[Any]) -> int:
+    def weighted_sampling_target(self, probs: list[float], target: list[T]) -> T:
         return target[self.weighted_sampling(probs)]
 
     @property

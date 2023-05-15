@@ -40,13 +40,13 @@ class ProposedSelector(TargetSelector):
         if self.target_condition == 0:
             raise InvalidSelectionException("Invalid proposed selector")
 
-        return [self._target_index]  # since tatget_condition starts with 1
+        return [self.target_index]  # since tatget_condition starts with 1
 
     def is_valid(self, state: GameState) -> bool:
-        return self._target_index in state.board.mutable_indices()
+        return self.target_index in state.board.mutable_indices()
 
     @property
-    def _target_index(self) -> int:
+    def target_index(self) -> int:
         return self.target_condition - 1
 
 

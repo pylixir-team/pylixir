@@ -1,6 +1,10 @@
-from typing import Type
+from typing import Type, cast
 
-from pylixir.application.council import ElixirOperation, ForbiddenActionException
+from pylixir.application.council import (
+    ElixirOperation,
+    ForbiddenActionException,
+    TargetSelector,
+)
 from pylixir.core.base import Randomness
 from pylixir.core.state import GameState
 from pylixir.data.council.common import (
@@ -8,6 +12,7 @@ from pylixir.data.council.common import (
     choose_min_indices,
     choose_random_indices_with_exclusion,
 )
+from pylixir.data.council.target import ProposedSelector
 
 
 class TargetSizeMismatchException(Exception):
@@ -259,7 +264,7 @@ class SetEnchantIncreaseAmount(AlwaysValidOperation):
         return state
 
 
-class SetEnchantEffectCount(AlwaysValidOperation):
+class SetEnchantEffectCount(ElixirOperation):
     """이번에는 <2>개의 효과를 동시에 연성하겠어"""
 
     def reduce(
@@ -271,6 +276,9 @@ class SetEnchantEffectCount(AlwaysValidOperation):
         state = state.copy(update=dict(enchanter=enchanter))
 
         return state
+
+    def is_valid(self, state: GameState) -> bool:
+        return len(state.board.mutable_indices()) >= self.value[0]
 
 
 class SetValueRanged(AlwaysValidOperation):
@@ -291,6 +299,14 @@ class SetValueRanged(AlwaysValidOperation):
         state = state.copy(update=dict(board=board))
 
         return state
+
+    def is_jointly_valid(
+        self, state: GameState, target_selector: TargetSelector
+    ) -> bool:
+        """SetValueRanged Always runs with `proposed` targetType."""
+        proposed_target_selector = cast(ProposedSelector, target_selector)
+        target_index = proposed_target_selector.target_index
+        return state.board.get_effect_values()[target_index] < self.value[1]
 
 
 class RedistributeAll(AlwaysValidOperation):
@@ -400,10 +416,12 @@ class SwapValues(ElixirOperation):
         return state
 
     def is_valid(self, state: GameState) -> bool:
-        return all(state.board.get(idx).is_mutable() for idx in self.value)
+        return (state.progress.turn_passed > 0) and all(
+            state.board.get(idx).is_mutable() for idx in self.value
+        )
 
 
-class SwapMinMax(AlwaysValidOperation):
+class SwapMinMax(ElixirOperation):
     """<최고 단계> 효과 <1>개와  <최하 단계> 효과 <1>개의 단계를 뒤바꿔주지."""
 
     def reduce(
@@ -422,8 +440,11 @@ class SwapMinMax(AlwaysValidOperation):
 
         return state
 
+    def is_valid(self, state: GameState) -> bool:
+        return state.progress.turn_passed > 0
 
-class Exhaust(AlwaysValidOperation):
+
+class Exhaust(ElixirOperation):
     """소진"""
 
     def reduce(
@@ -435,6 +456,9 @@ class Exhaust(AlwaysValidOperation):
         state = state.copy(update=dict(committee=committee))
 
         return state
+
+    def is_valid(self, state: GameState) -> bool:
+        return len(state.committee.get_valid_slots()) == 3
 
 
 class Exhausted(AlwaysValidOperation):
@@ -591,6 +615,9 @@ class DecreaseMaxAndSwapMinMax(AlwaysValidOperation):
 
         return state
 
+    def is_valid(self, state: GameState) -> bool:
+        return state.progress.turn_passed > 0
+
 
 class DecreaseFirstTargetAndSwap(ElixirOperation):
     def reduce(
@@ -609,6 +636,9 @@ class DecreaseFirstTargetAndSwap(ElixirOperation):
         return state
 
     def is_valid(self, state: GameState) -> bool:
+        if state.progress.turn_passed == 0:
+            return False
+
         first_target, second_target = self.value
         return all(state.board.get(idx).is_mutable() for idx in self.value) and (
             state.board.get(first_target).value > state.board.get(second_target).value

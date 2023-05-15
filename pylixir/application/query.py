@@ -1,13 +1,11 @@
-from pylixir.core.state import GameState
+import pydantic
+
+from pylixir.application.council import Council
+from pylixir.application.service import CouncilPool
 from pylixir.core.base import Board
 from pylixir.core.committee import SageCommittee
 from pylixir.core.progress import Progress
-from pylixir.application.council import Council
-from pylixir.application.service import CouncilPool
-
-
-import pydantic
-
+from pylixir.core.state import GameState
 
 
 class GameStateView(pydantic.BaseModel):
@@ -32,8 +30,5 @@ def get_state_view(state: GameState, council_pool: CouncilPool) -> GameStateView
     ]
 
     return GameStateView(
-        board=board,
-        progress=progress,
-        committee=committee,
-        councils=councils
+        board=board, progress=progress, committee=committee, councils=councils
     )

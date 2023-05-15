@@ -1,5 +1,8 @@
+from typing import Type
+
 import pytest
 
+from pylixir.application.council import ElixirOperation
 from pylixir.core.state import GameState
 from pylixir.data.council.operation import (
     DecreaseFirstTargetAndSwap,
@@ -147,6 +150,7 @@ def testtest_decrease_first_and_swap_is_not_valid_in_reverse_order(
 ) -> None:
     for idx in range(5):
         abundant_state.board.set_effect_count(idx, start[idx])
+        abundant_state.progress.turn_left -= 1
 
     assert DecreaseFirstTargetAndSwap(
         ratio=0,
@@ -157,5 +161,30 @@ def testtest_decrease_first_and_swap_is_not_valid_in_reverse_order(
     assert not DecreaseFirstTargetAndSwap(
         ratio=0,
         value=list(reversed(targets)),
+        remain_turn=1,
+    ).is_valid(abundant_state)
+
+
+@pytest.mark.parametrize(
+    "swap_opration",
+    [
+        SwapValues,
+        SwapMinMax,
+        DecreaseMaxAndSwapMinMax,
+        DecreaseFirstTargetAndSwap,
+    ],
+)
+def test_starting_state_not_valid(
+    swap_opration: Type[ElixirOperation],
+    abundant_state: GameState,
+) -> None:
+    for idx, count in zip(range(5), [1, 3, 5, 7, 9]):
+        abundant_state.board.set_effect_count(idx, count)
+
+    abundant_state.progress.turn_left = abundant_state.progress.total_turn
+
+    assert not swap_opration(
+        ratio=0,
+        value=[1, 0],
         remain_turn=1,
     ).is_valid(abundant_state)

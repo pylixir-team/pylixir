@@ -19,11 +19,11 @@ def get_client(seed: int) -> Client:
 
 
 class ClientBuilder:
-    def __init__(self):
+    def __init__(self) -> None:
         self._council_pool = get_ingame_council_pool()
         self._state_initializer = state_initializer
 
-    def get_client(self, seed) -> Client:
+    def get_client(self, seed: float) -> Client:
         return Client(
             self._state_initializer,
             self._state_initializer(),
