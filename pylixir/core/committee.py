@@ -18,16 +18,6 @@ class Sage(pydantic.BaseModel):
     is_removed: bool
     slot: int
 
-    @property
-    def type(self) -> SageType:
-        if self.power == 0:
-            return SageType.none
-
-        if self.power > 0:
-            return SageType.lawful
-
-        return SageType.chaos
-
     def selected(self) -> None:
         if self.power < 0 or self.power == MAX_LAWFUL:
             self.power = 0
