@@ -22,6 +22,21 @@ class ForbiddenActionException(Exception):
     ...
 
 
+class TargetSelector(pydantic.BaseModel, metaclass=abc.ABCMeta):
+    target_condition: int
+    count: int
+
+    @abc.abstractmethod
+    def select_targets(
+        self, state: GameState, effect_index: Optional[int], randomness: Randomness
+    ) -> list[int]:
+        ...
+
+    @abc.abstractmethod
+    def is_valid(self, state: GameState) -> bool:
+        ...
+
+
 class ElixirOperation(pydantic.BaseModel, metaclass=abc.ABCMeta):
     ratio: int
     value: tuple[int, int]
@@ -40,25 +55,15 @@ class ElixirOperation(pydantic.BaseModel, metaclass=abc.ABCMeta):
     def is_valid(self, state: GameState) -> bool:
         ...
 
+    def is_jointly_valid(
+        self, state: GameState, target_selector: TargetSelector
+    ) -> bool:
+        return True
+
     @classmethod
     def get_type(cls) -> str:
         class_name = cls.__name__
         return class_name[0].lower() + class_name[1:]
-
-
-class TargetSelector(pydantic.BaseModel, metaclass=abc.ABCMeta):
-    target_condition: int
-    count: int
-
-    @abc.abstractmethod
-    def select_targets(
-        self, state: GameState, effect_index: Optional[int], randomness: Randomness
-    ) -> list[int]:
-        ...
-
-    @abc.abstractmethod
-    def is_valid(self, state: GameState) -> bool:
-        ...
 
 
 class Logic(pydantic.BaseModel):
@@ -78,7 +83,11 @@ class Logic(pydantic.BaseModel):
         return new_state
 
     def is_valid(self, state: GameState) -> bool:
-        return self.operation.is_valid(state) and self.target_selector.is_valid(state)
+        return (
+            self.operation.is_valid(state)
+            and self.target_selector.is_valid(state)
+            and self.operation.is_jointly_valid(state, self.target_selector)
+        )
 
 
 class Council(pydantic.BaseModel):

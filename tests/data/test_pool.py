@@ -43,5 +43,5 @@ def test_sample_council(
     for seed in range(50):
         randomness = SeededRandomness(seed)
         council_pool.sample_council(
-            abundant_state, Sage(power=2, is_removed=False, slot=1), randomness
+            abundant_state, Sage(power=2, is_removed=False, slot=1), randomness, []
         )

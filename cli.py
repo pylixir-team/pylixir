@@ -6,7 +6,9 @@ from pylixir.interface.configuration import state_initializer, create_empty_comm
 from pylixir.application.reducer import PickCouncilAndEnchantAndRerollAction
 from pylixir.interface.cli import get_client
 
+
 def tui(client: Client):
+    print(client.text().represent_as_text())
     while True:
         try:
             sage_index, effect_index = map(int, input().strip().split())
@@ -20,10 +22,11 @@ def tui(client: Client):
 
 
         view = client.text().councils[sage_index].descriptions[sage_index]
-        print(f"Decide to Sage {sage_index} with effect {effect_index} | {view}")
-    
+        print(f"Decide to Sage {sage_index} with effect {effect_index} | <{view}>")
+
+        board_before_run = client.get_state().board.copy(deep=True)
         client.run(PickCouncilAndEnchantAndRerollAction(sage_index=sage_index, effect_index=effect_index))
-        print(client.text())
+        print(client.text().represent_as_text(board_before_run))
 
 
 if __name__ == "__main__":

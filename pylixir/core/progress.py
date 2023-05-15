@@ -32,3 +32,7 @@ class Progress(pydantic.BaseModel):
 
     def modify_reroll(self, amount: int) -> None:
         self.reroll_left += amount
+
+    @property
+    def turn_passed(self) -> int:
+        return self.total_turn - self.turn_left

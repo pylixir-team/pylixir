@@ -1,5 +1,7 @@
 from typing import Callable
 
+from pylixir.application.council import ForbiddenActionException
+from pylixir.application.query import GameStateView, get_state_view
 from pylixir.application.reducer import (
     PickCouncilAndEnchantAndRerollAction,
     pick_council,
@@ -8,8 +10,6 @@ from pylixir.application.view import ClientView
 from pylixir.core.base import Randomness
 from pylixir.core.state import GameState
 from pylixir.data.council_pool import ConcreteCouncilPool
-from pylixir.application.query import GameStateView, get_state_view
-from pylixir.application.council import ForbiddenActionException
 
 
 class Client:

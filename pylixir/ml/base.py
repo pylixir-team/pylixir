@@ -1,10 +1,9 @@
 import abc
-import itertools
 import random
 import time
 
-from pylixir.application.reducer import PickCouncilAndEnchantAndRerollAction
 from pylixir.application.query import GameStateView
+from pylixir.application.reducer import PickCouncilAndEnchantAndRerollAction
 from pylixir.interface.cli import ClientBuilder
 
 

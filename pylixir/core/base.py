@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import abc
 import enum
-from typing import Any
+from typing import TypeVar
 
 import pydantic
+
+T = TypeVar("T")
 
 
 class Randomness(metaclass=abc.ABCMeta):
@@ -29,7 +31,7 @@ class Randomness(metaclass=abc.ABCMeta):
         ...
 
     @abc.abstractmethod
-    def weighted_sampling_target(self, probs: list[float], target: list[Any]) -> int:
+    def weighted_sampling_target(self, probs: list[float], target: list[T]) -> T:
         ...
 
     def redistribute(self, basis: list[int], count: int, max_count: int) -> list[int]:
@@ -87,6 +89,9 @@ MAX_EFFECT_COUNT = 11
 
 class Board(pydantic.BaseModel):
     effects: tuple[Effect, Effect, Effect, Effect, Effect]
+
+    def diff(self, prev: Board) -> list[int]:
+        return [self.effects[idx].value - prev.effects[idx].value for idx in range(5)]
 
     def lock(self, effect_index: int) -> None:
         self.effects[effect_index].lock()
