@@ -34,6 +34,11 @@ class ConcreteCouncilPool(CouncilPool):
     def __len__(self) -> int:
         return len(self._councils)
 
+    def get_index_map(self) -> dict[str, int]:
+        return {
+            self._councils[idx].id: idx for idx in range(len(self))
+        }
+
     def get_council_queries(
         self, state: GameState, randomness: Randomness, is_reroll: bool = False
     ) -> tuple[CouncilQuery, CouncilQuery, CouncilQuery]:

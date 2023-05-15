@@ -8,6 +8,8 @@ from pylixir.application.view import ClientView
 from pylixir.core.base import Randomness
 from pylixir.core.state import GameState
 from pylixir.data.council_pool import ConcreteCouncilPool
+from pylixir.application.query import GameStateView, get_state_view
+from pylixir.application.council import ForbiddenActionException
 
 
 class Client:
@@ -26,8 +28,13 @@ class Client:
             state, randomness, is_reroll=False
         )
 
-    def run(self, action: PickCouncilAndEnchantAndRerollAction) -> None:
-        self._state = self._run(self._state, action)
+    def run(self, action: PickCouncilAndEnchantAndRerollAction) -> bool:
+        try:
+            self._state = self._run(self._state, action)
+        except ForbiddenActionException:
+            return False
+
+        return True
 
     def _run(
         self, state: GameState, action: PickCouncilAndEnchantAndRerollAction
@@ -39,7 +46,7 @@ class Client:
             self._council_pool,
         )
 
-    def get_view(self) -> ClientView:
+    def text(self) -> ClientView:
         return ClientView(
             state=self._state,
             councils=[
@@ -48,5 +55,11 @@ class Client:
             ],
         )
 
+    def get_view(self) -> GameStateView:
+        return get_state_view(self._state, self._council_pool)
+
     def get_state(self) -> GameState:
-        return self._state.deepcopy()
+        return self._state
+
+    def is_done(self) -> bool:
+        return self._state.progress.get_turn_left() == 0

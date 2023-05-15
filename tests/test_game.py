@@ -4,6 +4,6 @@ from pylixir.interface.cli import get_client
 
 def test_game() -> None:
     client = get_client(42)
-    print(client.get_view().represent_as_text())
+    print(client.text())
 
     client.run(PickCouncilAndEnchantAndRerollAction(sage_index=1, effect_index=1))

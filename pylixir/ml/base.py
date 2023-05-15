@@ -4,20 +4,20 @@ import random
 import time
 
 from pylixir.application.reducer import PickCouncilAndEnchantAndRerollAction
-from pylixir.core.state import GameState
+from pylixir.application.query import GameStateView
 from pylixir.interface.cli import ClientBuilder
 
 
 class ElixirModel(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def feed(self, state: GameState) -> PickCouncilAndEnchantAndRerollAction:
+    def feed(self, view: GameStateView) -> PickCouncilAndEnchantAndRerollAction:
         ...
 
 
 class RandomModel(metaclass=abc.ABCMeta):
-    def feed(self, state: GameState) -> PickCouncilAndEnchantAndRerollAction:
-        sage_index = random.choice(state.get_valid_sage_indices())
-        effect_index = random.choice(state.get_valid_effect_indices())
+    def feed(self, view: GameStateView) -> PickCouncilAndEnchantAndRerollAction:
+        sage_index = random.choice(view.get_valid_sage_indices())
+        effect_index = random.choice(view.get_valid_effect_indices())
         return PickCouncilAndEnchantAndRerollAction(
             effect_index=effect_index, sage_index=sage_index
         )
@@ -25,14 +25,14 @@ class RandomModel(metaclass=abc.ABCMeta):
 
 class Metric(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def measure(self, state: GameState) -> float:
+    def measure(self, view: GameStateView) -> float:
         ...
 
 
 class Any53Metric(Metric):
-    def measure(self, state: GameState) -> float:
-        effects = state.board.get_effect_values()
-        a, b = state.board.unlocked_indices()
+    def measure(self, view: GameStateView) -> float:
+        effects = view.board.get_effect_values()
+        a, b = view.board.unlocked_indices()
 
         return float(effects[a] + effects[b] >= 18)
 
@@ -49,17 +49,17 @@ class Evaluator:
 
         while True:
 
-            action = self._model.feed(client.get_state())
+            action = self._model.feed(client.get_view())
             if self._verbose:
                 print("-------")
-                print(client.get_view().represent_as_text())
+                print(client.text())
                 print(action)
 
             client.run(action)
             if client.get_state().progress.get_turn_left() == 0:  # may replaced by view
                 break
 
-        return self._metric.measure(client.get_state())
+        return self._metric.measure(client.get_view())
 
     def benchmark(self, count: int = 10000, interval: int = 100):
         random.seed(42)

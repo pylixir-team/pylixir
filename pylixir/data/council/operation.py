@@ -1,6 +1,6 @@
 from typing import Type
 
-from pylixir.application.council import ElixirOperation
+from pylixir.application.council import ElixirOperation, ForbiddenActionException
 from pylixir.core.base import Randomness
 from pylixir.core.state import GameState
 from pylixir.data.council.common import (
@@ -242,7 +242,7 @@ class Restart(AlwaysValidOperation):
     def reduce(
         self, state: GameState, targets: list[int], randomness: Randomness
     ) -> GameState:
-        return state  ## TODO
+        raise ForbiddenActionException()  ## TODO
 
 
 class SetEnchantIncreaseAmount(AlwaysValidOperation):
@@ -435,6 +435,15 @@ class Exhaust(AlwaysValidOperation):
         state = state.copy(update=dict(committee=committee))
 
         return state
+
+
+class Exhausted(AlwaysValidOperation):
+    """소진"""
+
+    def reduce(
+        self, state: GameState, targets: list[int], randomness: Randomness
+    ) -> GameState:
+        raise ForbiddenActionException()
 
 
 class IncreaseMaxAndDecreaseTarget(AlwaysValidOperation):

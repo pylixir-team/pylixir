@@ -19,11 +19,11 @@ def tui(client: Client):
             continue
 
 
-        view = client.get_view().councils[sage_index].descriptions[sage_index]
+        view = client.text().councils[sage_index].descriptions[sage_index]
         print(f"Decide to Sage {sage_index} with effect {effect_index} | {view}")
     
         client.run(PickCouncilAndEnchantAndRerollAction(sage_index=sage_index, effect_index=effect_index))
-        print(client.get_view().represent_as_text())
+        print(client.text())
 
 
 if __name__ == "__main__":

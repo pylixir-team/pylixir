@@ -18,6 +18,10 @@ class CouncilType(enum.Enum):
     exhausted = "exhausted"
 
 
+class ForbiddenActionException(Exception):
+    ...
+
+
 class ElixirOperation(pydantic.BaseModel, metaclass=abc.ABCMeta):
     ratio: int
     value: tuple[int, int]
@@ -65,6 +69,10 @@ class Logic(pydantic.BaseModel):
         self, state: GameState, effect_index: int, randomness: Randomness
     ) -> GameState:
         targets = self.target_selector.select_targets(state, effect_index, randomness)
+        for target in targets:
+            if target in state.board.locked_indices():
+                raise ForbiddenActionException("selected locked indices")
+
         new_state = self.operation.reduce(state, targets, randomness)
 
         return new_state
