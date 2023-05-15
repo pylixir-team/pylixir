@@ -17,20 +17,6 @@ class bcolors:
     ENDC = "\033[0m"
 
 
-def _diff_to_pretty_output(diff: list[int]) -> str:
-    output = ""
-
-    for diff_value in diff:
-        if diff_value > 0:
-            output += f"{bcolors.GREEN}{diff_value}{bcolors.ENDC} "
-        elif diff_value < 0:
-            output += f"{bcolors.YELLOW}{diff_value}{bcolors.ENDC} "
-        else:
-            output += f"{diff_value} "
-
-    return output
-
-
 class CommitteeView(pydantic.BaseModel):
     committee: SageCommittee
     councils: list[Council]
