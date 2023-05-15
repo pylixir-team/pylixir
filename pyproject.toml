@@ -1,29 +1,26 @@
 [tool.poe.tasks]
-_black-check = "black --check pylixir tests"
-_isort-check = "isort --check-only pylixir tests"
-formatting-check = ["_black-check", "_isort-check"]
+black-check = "black --check pylixir tests"
+isort-check = "isort --check-only pylixir tests"
 
-_black = "black pylixir tests"
-_isort = "isort pylixir tests"
-format = ["_black", "_isort"]
+black = "black pylixir tests"
+isort = "isort pylixir tests"
 
-_pylint = "pylint pylixir tests"
-lint = ["_pylint"]
-
+format = ["black", "isort"]
+lint = "pylint pylixir tests"
 coverage = "pytest --cov=pylixir"
-coverage-report = "pytest --cov=pylixir --cov-report=xml"
-
 unittest = "pytest -vv -x tests/ --ignore tests/fetch/"
 typetest = "mypy pylixir tests"
-clean = "rm -rf **/__pycache__ .coverage .mypy_cache .pytest_cache"
-test = ["coverage", "typetest", "lint", "formatting-check"]
 
-[tool.black]
+cln = "rm -rf **/__pycache__ .coverage .mypy_cache .pytest_cache"
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-skip = "third_party"
+test = ["coverage", "typetest", "lint", "black-check", "isort-check"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+
+[tool.mypy]
+strict = true
 
 [tool.pytest.ini_options]
 addopts = "-vv -x"
@@ -32,19 +29,10 @@ testpaths = ["tests"]
 [tool.coverage.run]
 branch = true
 
-[tool.coverage.report]
-fail_under = 85
-show_missing = true
-[tool.coverage.xml]
-output = "coverage-reports/coverage.xml"
-
-[tool.mypy]
-warn_return_any = true
-warn_unused_configs = true
-incremental = false
-disable_error_code = "misc"
-strict = true
-
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+skip = "third_party"
 
 [tool.poetry]
 name = "pylixir"
