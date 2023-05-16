@@ -647,7 +647,6 @@ class DecreaseFirstTargetAndSwap(ElixirOperation):
 
 def get_operation_classes() -> list[Type[ElixirOperation]]:
     operations: list[Type[ElixirOperation]] = [
-        AlwaysValidOperation,
         MutateProb,
         MutateLuckyRatio,
         IncreaseTargetWithRatio,
