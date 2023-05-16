@@ -20,7 +20,9 @@ def _get_effect_repr(effect: Effect, prvious_effect: Optional[Effect]) -> str:
 
     colored = ""
 
-    if prvious_effect:
+    if effect.locked:
+        colored = f"{bcolors.GRAY}{joined}{bcolors.ENDC}"
+    elif prvious_effect:
         for idx, char in enumerate(joined):
             offset = (idx + 2) // 2
             if prvious_effect.value < (offset) <= effect.value:
@@ -31,7 +33,6 @@ def _get_effect_repr(effect: Effect, prvious_effect: Optional[Effect]) -> str:
                 colored += f"{bcolors.YELLOW}{char}{bcolors.ENDC}"
             else:
                 colored += f"{char}"
-        joined = colored
 
     return f"[{effect.value}] {colored}"
 
@@ -44,6 +45,6 @@ def show_board(
 
     return "\n".join(
         f"{idx}: {_get_effect_repr(board.get(idx), previous_board.get(idx) if previous_board else None)}\
-{enchant_probs[idx]*100:.2f}% | [{lucky_ratios[idx]*100:.0f}%]"
+  {enchant_probs[idx]*100:.2f}% | [{lucky_ratios[idx]*100:.0f}%]"
         for idx in range(5)
     )

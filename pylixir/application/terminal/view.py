@@ -15,5 +15,5 @@ def show_game_state(
 {show_board(state.board, state.enchanter, previous_board)}
 {show_progress(state.progress)}
 
-{show_councils(state.committee, councils)}
+{show_councils(state.committee, councils) if state.progress.turn_left > 0 else "DONE"}
     """

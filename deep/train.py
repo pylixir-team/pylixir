@@ -48,7 +48,7 @@ class PylixirEnv:
         previous_total_reward = self._embedding_provider.current_total_reward(self._client)
         previous_lock_count = len(self._client.get_state().board.locked_indices())
 
-        ok = self._client.run(action_object)
+        ok = self._client.pick(action_object.sage_index, action_object.effect_index)
         state = self._embedding_provider.create_observation(self._client)
         reward = self._embedding_provider.current_total_reward(self._client) - previous_total_reward
         lock_count = len(self._client.get_state().board.locked_indices())
