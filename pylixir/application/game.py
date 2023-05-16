@@ -1,13 +1,12 @@
-from typing import Callable
+from typing import Callable, Optional
 
-from pylixir.application.council import ForbiddenActionException
-from pylixir.application.query import GameStateView, get_state_view
+from pylixir.application.council import Council, ForbiddenActionException
 from pylixir.application.reducer import (
     PickCouncilAndEnchantAndRerollAction,
     pick_council,
 )
-from pylixir.application.view import ClientView
-from pylixir.core.base import Randomness
+from pylixir.application.terminal.view import show_game_state
+from pylixir.core.base import Board, Randomness
 from pylixir.core.state import GameState
 from pylixir.data.council_pool import ConcreteCouncilPool
 
@@ -19,6 +18,7 @@ class Client:
         state: GameState,
         council_pool: ConcreteCouncilPool,
         randomness: Randomness,
+        show_previous_board: bool = False,
     ):
         self._state_initializer = state_initializer
         self._state = state
@@ -27,8 +27,13 @@ class Client:
         self._state.suggestions = self._council_pool.get_council_queries(
             state, randomness, is_reroll=False
         )
+        self._show_previous_board = show_previous_board
+        self._previous_board: Optional[Board] = None
 
     def run(self, action: PickCouncilAndEnchantAndRerollAction) -> bool:
+        if self._show_previous_board:
+            self._previous_board = self.get_state().board.copy(deep=True)
+
         try:
             self._state = self._run(self._state, action)
         except ForbiddenActionException:
@@ -46,17 +51,15 @@ class Client:
             self._council_pool,
         )
 
-    def text(self) -> ClientView:
-        return ClientView(
-            state=self._state,
-            councils=[
-                self._council_pool.get_council(query)
-                for query in self._state.suggestions
-            ],
-        )
+    def get_current_councils(self) -> list[Council]:
+        return [
+            self._council_pool.get_council(query) for query in self._state.suggestions
+        ]
 
-    def get_view(self) -> GameStateView:
-        return get_state_view(self._state, self._council_pool)
+    def view(self) -> str:
+        return show_game_state(
+            self._state, self.get_current_councils(), self._previous_board
+        )
 
     def get_state(self) -> GameState:
         return self._state

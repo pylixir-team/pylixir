@@ -4,7 +4,7 @@ from pylixir.data.pool import get_ingame_council_pool
 from pylixir.interface.configuration import state_initializer
 
 
-def get_client(seed: int) -> Client:
+def get_client(seed: int, show_previous_board: bool = False) -> Client:
     council_pool = get_ingame_council_pool()
     initial_state = state_initializer()
     randomness = SeededRandomness(seed)
@@ -13,6 +13,7 @@ def get_client(seed: int) -> Client:
         initial_state,
         council_pool=council_pool,
         randomness=randomness,
+        show_previous_board=show_previous_board,
     )
 
     return client

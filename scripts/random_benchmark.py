@@ -1,4 +1,4 @@
-from pylixir.ml.base import Evaluator, RandomModel, Any53Metric
+from deep.ml.base import Evaluator, RandomModel, Any53Metric
 
 from cProfile import Profile
 from pstats import Stats

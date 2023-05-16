@@ -13,7 +13,7 @@ from pylixir.data.council_pool import ConcreteCouncilPool
 from pylixir.data.loader import ElixirOperationLoader, ElixirTargetSelectorLoader
 
 
-class LogicQuery(pydantic.BaseModel):
+class LogicMeta(pydantic.BaseModel):
     type: str
     targetType: str
     targetCondition: int
@@ -26,7 +26,7 @@ class LogicQuery(pydantic.BaseModel):
         extra = "forbid"
 
 
-class CouncilQuery(pydantic.BaseModel):
+class CouncilMeta(pydantic.BaseModel):
     id: str
     pickupRatio: int
     range: tuple[int, int]
@@ -34,7 +34,7 @@ class CouncilQuery(pydantic.BaseModel):
     slotType: int
     type: str
     applyLimit: int
-    logics: list[LogicQuery]
+    logics: list[LogicMeta]
     applyImmediately: bool
 
     class Config:
@@ -50,28 +50,28 @@ class CouncilLoader:
         self._operation_loader = operation_loader
         self._selector_loader = selector_loader
 
-    def get_council(self, query: CouncilQuery) -> Council:
+    def get_council(self, meta: CouncilMeta) -> Council:
         return Council(
-            id=query.id,
-            logics=[self._get_logic(logic_query) for logic_query in query.logics],
-            pickup_ratio=query.pickupRatio,
-            turn_range=query.range,
-            slot_type=query.slotType,
-            descriptions=query.descriptions,
-            type=query.type,
+            id=meta.id,
+            logics=[self._get_logic(logic_meta) for logic_meta in meta.logics],
+            pickup_ratio=meta.pickupRatio,
+            turn_range=meta.range,
+            slot_type=meta.slotType,
+            descriptions=meta.descriptions,
+            type=meta.type,
         )
 
-    def _get_logic(self, logic_query: LogicQuery) -> Logic:
+    def _get_logic(self, meta: LogicMeta) -> Logic:
         operation = self._operation_loader.get_operation(
-            logic_query.type,
-            logic_query.ratio,
-            logic_query.value,
-            logic_query.remainTurn,
+            meta.type,
+            meta.ratio,
+            meta.value,
+            meta.remainTurn,
         )
         target_selector = self._selector_loader.get_selector(
-            logic_query.targetType,
-            logic_query.targetCondition,
-            logic_query.targetCount,
+            meta.targetType,
+            meta.targetCondition,
+            meta.targetCount,
         )
         return Logic(
             operation=operation,
@@ -87,9 +87,9 @@ def _get_pool_from_file_and_loader(
 
     councils = []
     for raw in raws:
-        query = CouncilQuery.parse_obj(raw)
+        meta = CouncilMeta.parse_obj(raw)
         try:
-            councils.append(council_loader.get_council(query))
+            councils.append(council_loader.get_council(meta))
         except KeyError as e:
             if skip:
                 continue

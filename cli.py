@@ -8,7 +8,7 @@ from pylixir.interface.cli import get_client
 
 
 def tui(client: Client):
-    print(client.text().represent_as_text())
+    print(client.view())
     while True:
         try:
             sage_index, effect_index = map(int, input().strip().split())
@@ -21,13 +21,13 @@ def tui(client: Client):
             continue
 
 
-        view = client.text().councils[sage_index].descriptions[sage_index]
-        print(f"Decide to Sage {sage_index} with effect {effect_index} | <{view}>")
+        #view = client.view().councils[sage_index].descriptions[sage_index]
+        #print(f"Decide to Sage {sage_index} with effect {effect_index} | <{view}>")
 
         board_before_run = client.get_state().board.copy(deep=True)
         client.run(PickCouncilAndEnchantAndRerollAction(sage_index=sage_index, effect_index=effect_index))
-        print(client.text().represent_as_text(board_before_run))
+        print(client.view())
 
 
 if __name__ == "__main__":
-    tui(get_client(42))
+    tui(get_client(42, show_previous_board=True))
