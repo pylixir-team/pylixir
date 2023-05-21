@@ -45,12 +45,12 @@ def pick_council(
     state.enchanter.get_enchant_effect_count()
     state.progress.spent_turn(1)
     state.enchanter.elapse_turn()
-
-    state.suggestions = council_pool.get_council_queries(
-        state,
-        randomness=randomness,
-        is_reroll=False,
-    )
+    if state.progress.get_turn_left() != 0:
+        state.suggestions = council_pool.get_council_queries(
+            state,
+            randomness=randomness,
+            is_reroll=False,
+        )
 
     return state
 

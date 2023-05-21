@@ -82,7 +82,7 @@ def train():
     print("============================================================================================")
 
     ####### initialize environment hyperparameters ######
-    env_name = "RoboschoolWalker2d-v12"
+    env_name = "Pylixir"
 
     has_continuous_action_space = False  # continuous action space; else discrete
 
