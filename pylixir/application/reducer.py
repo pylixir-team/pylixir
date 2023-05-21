@@ -6,7 +6,11 @@ from pylixir.core.base import Randomness
 from pylixir.core.state import GameState
 
 
-class PickCouncilAndEnchantAndRerollAction(pydantic.BaseModel):
+class Action(pydantic.BaseModel):
+    ...
+
+
+class PickCouncilAndEnchantAndRerollAction(Action):
     effect_index: int
     sage_index: int
 
@@ -47,5 +51,20 @@ def pick_council(
         randomness=randomness,
         is_reroll=False,
     )
+
+    return state
+
+
+def reroll(
+    state: GameState,
+    randomness: Randomness,
+    council_pool: CouncilPool,
+) -> GameState:
+    state.suggestions = council_pool.get_council_queries(
+        state,
+        randomness=randomness,
+        is_reroll=True,
+    )
+    state.progress.spent_reroll()
 
     return state

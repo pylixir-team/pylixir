@@ -55,6 +55,7 @@ scikit-learn = "^1.0.2"
 dependency-injector = "^4.40.0"
 torch = "^2.0.0"
 torchvision = "^0.15.1"
+fire = "^0.5.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"

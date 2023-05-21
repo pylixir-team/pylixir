@@ -1,33 +1,36 @@
-from pylixir.data.council_pool import ConcreteCouncilPool
 from pylixir.application.game import Client
-from pylixir.core.randomness import SeededRandomness
-from pylixir.data.pool import get_ingame_council_pool
-from pylixir.interface.configuration import state_initializer, create_empty_committee
-from pylixir.application.reducer import PickCouncilAndEnchantAndRerollAction
 from pylixir.interface.cli import get_client
+import fire
 
 
 def tui(client: Client):
     print(client.view())
     while True:
-        try:
-            sage_index, effect_index = map(int, input().strip().split())
-        except ValueError:
-            print("Wrong input. Try again as {int, int}")
-            continue
+        command = input().strip()
+        
+        if command == "r":
+            client.reroll()
+        else:
+            try:
+                sage_index, effect_index = map(int, command.split())
+            except ValueError:
+                print("Wrong input. Try again as {int, int} or r for Reroll")
+                continue
 
-        if sage_index > 2 or effect_index > 4:
-            print("Sage index < 3 and Effect index < 5")
-            continue
+            if sage_index > 2 or effect_index > 4:
+                print("Sage index may < 3 and Effect index may < 5")
+                continue
 
+            client.pick(sage_index, effect_index)
 
-        #view = client.view().councils[sage_index].descriptions[sage_index]
-        #print(f"Decide to Sage {sage_index} with effect {effect_index} | <{view}>")
-
-        board_before_run = client.get_state().board.copy(deep=True)
-        client.run(PickCouncilAndEnchantAndRerollAction(sage_index=sage_index, effect_index=effect_index))
         print(client.view())
+        if client.is_done():
+            break
+
+def run(seed: int = 42):
+    client = get_client(seed, show_previous_board=True)
+    tui(client)
 
 
 if __name__ == "__main__":
-    tui(get_client(42, show_previous_board=True))
+    fire.Fire(run)

@@ -12,6 +12,10 @@ class GamePhase(enum.Enum):
     done = "done"
 
 
+class ProgressException(Exception):
+    ...
+
+
 class Progress(pydantic.BaseModel):
     turn_left: int = MAX_TURN_COUNT
     total_turn: int = MAX_TURN_COUNT
@@ -32,6 +36,12 @@ class Progress(pydantic.BaseModel):
 
     def modify_reroll(self, amount: int) -> None:
         self.reroll_left += amount
+
+    def spent_reroll(self) -> None:
+        if self.reroll_left <= 0:
+            raise ProgressException("Reroll only available when reroll left")
+
+        self.reroll_left -= 1
 
     @property
     def turn_passed(self) -> int:
