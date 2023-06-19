@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import gymnasium as gym
 import numpy as np
@@ -47,7 +47,7 @@ class PylixirEnv(gym.Env[Any, Any]):
         print(txt)
 
     def reset(
-        self, seed: int | None = None, options: dict[str, Any] | None = None
+        self, seed: Optional[int] = None, options: Optional[dict[str, Any]] = None
     ) -> tuple[np.typing.NDArray[np.int64], Dict[Any, Any]]:
         if seed is None:
             seed = random.randint(0, 1 << 16)
