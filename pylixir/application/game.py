@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional
 
 from pylixir.application.council import Council, ForbiddenActionException
 from pylixir.application.reducer import (
@@ -105,3 +105,9 @@ class Client:
     def _set_previous_board_as_now(self) -> None:
         if self._show_previous_board:
             self._previous_board = self.get_state().board.copy(deep=True)
+
+    def get_council_pool_index_map(self) -> Dict[str, int]:
+        """
+        Get council index map.
+        """
+        return self._council_pool.get_index_map()

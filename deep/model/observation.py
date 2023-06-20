@@ -72,7 +72,7 @@ class ActorCriticBuilder(nn.Module):
 class EmbeddingProvider:
     """This wil create such integer-set, which may suitable and parsed by  EmbeddingRenderer
     """
-    def __init__(self, configuration: EmbeddingConfiguration, index_map: dict[str, int]) -> None:
+    def __init__(self, index_map: dict[str, int]) -> None:
         self._council_id_map = index_map
 
         self._index_to_action: list[PickCouncilAndEnchantAndRerollAction] = sum([
@@ -92,7 +92,7 @@ class EmbeddingProvider:
         lucky_ratio = enchanter.query_lucky_ratio()
         enchant_prob = enchanter.query_enchant_prob(locked)
 
-        return [int(v * 1000) for v in lucky_ratio + enchant_prob]
+        return [int(v * 100) for v in lucky_ratio + enchant_prob]
 
     def progress_to_vector(self, progress: Progress):
         return [progress.turn_left, progress.reroll_left]
@@ -130,11 +130,17 @@ class EmbeddingProvider:
         values = state.board.get_effect_values()
         alived_indices = state.board.unlocked_indices()
         #alived_indices = [idx for idx in state.board.unlocked_indices() if idx in (0, 1)]
-        valid_values = [values[idx] for idx in alived_indices]
-        valid_values = sorted(valid_values)[-2:]
-        return sum((x/5) ** 2 for x in valid_values)
+        first, second = values[0], values[1]
+        if 0 not in alived_indices:
+            first = 0
+        if 1 not in alived_indices:
+            second = 0
+        # valid_values = [values[idx] for idx in alived_indices]
+        # first, second = sorted(valid_values)[-2:]
+        return first + second
+        # return sum((x/5) ** 2 for x in valid_values)
 
-    def is_complete(self, client: Client, threshold: int) -> float:
+    def is_complete(self, client: Client, threshold: int) -> bool:
         state = client.get_state()
         values = state.board.get_effect_values()
         alived_indices = state.board.unlocked_indices()
