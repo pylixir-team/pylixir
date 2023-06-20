@@ -77,7 +77,7 @@ class CouncilFeatureBuilder(BaseModel):
         }
 
 
-def _get_metadata_index_maps(metadata_map: dict[str, CouncilMeta]):
+def get_feature_builder(metadata_map: dict[str, CouncilMeta]):
     return CouncilFeatureBuilder(
         council_id=_as_index_map(set([meta.id for meta in metadata_map.values()])),
         council_pickupRatio=_as_index_map(
@@ -93,10 +93,22 @@ def _get_metadata_index_maps(metadata_map: dict[str, CouncilMeta]):
             set([meta.slotType for meta in metadata_map.values()])
         ),
         council_type=_as_index_map(set([meta.type for meta in metadata_map.values()])),
-        logic_type_index=_as_index_map(
+        logic_type=_as_index_map(
             set([logic.type for logic in _all_logics(metadata_map)])
         ),
-        logic_target_type_index=_as_index_map(
+        logic_targetType=_as_index_map(
             set([logic.targetType for logic in _all_logics(metadata_map)])
+        ),
+        logic_targetCondition=_as_index_map(
+            set([logic.targetCondition for logic in _all_logics(metadata_map)])
+        ),
+        logic_targetCount=_as_index_map(
+            set([logic.targetCount for logic in _all_logics(metadata_map)])
+        ),
+        logic_ratio=_as_index_map(
+            set([logic.ratio for logic in _all_logics(metadata_map)])
+        ),
+        logic_remainTurn=_as_index_map(
+            set([logic.remainTurn for logic in _all_logics(metadata_map)])
         ),
     )
