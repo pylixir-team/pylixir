@@ -1,6 +1,6 @@
 import pytest
 
-from pylixir.application.council import Council
+from pylixir.application.council import Council, CouncilType
 from pylixir.core.state import GameState
 
 
@@ -29,7 +29,7 @@ def test_turn_in_range(
         turn_range=turn_range,
         slot_type=0,
         descriptions=[],
-        type="common",
+        type=CouncilType.common,
     )
 
     clean_state.progress.spent_turn(target_turn)
