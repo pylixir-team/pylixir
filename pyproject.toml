@@ -65,17 +65,6 @@ torchrl = "^0.1.1"
 tqdm = "^4.65.0"
 gymnasium = "^0.28.1"
 
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-isort = "^5.9.3"
-coverage = "^6.0.2"
-pylint = "=2.13.1"
-mypy = "^0.981"
-black = "^22.6"
-pytest-cov = "^3.0.0"
-build = "^0.8.0"
-twine = "^4.0.1"
-types-requests = "^2.28.3"
 
 [[tool.poetry.source]]
 name = "pytorch"
@@ -92,6 +81,19 @@ priority = "supplemental"
 [[tool.poetry.source]]
 name = "PyPI"
 priority = "primary"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^6.2.5"
+isort = "^5.9.3"
+coverage = "^6.0.2"
+pylint = "=2.13.1"
+black = "^22.6"
+pytest-cov = "^3.0.0"
+build = "^0.8.0"
+twine = "^4.0.1"
+types-requests = "^2.28.3"
+mypy = "0.981"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
