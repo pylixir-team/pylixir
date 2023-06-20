@@ -1,11 +1,15 @@
-from typing import Generator, TypeVar
+from typing import TYPE_CHECKING, Generator, TypeVar
 
-from _typeshed import SupportsRichComparison
 from pydantic import BaseModel
 
-from pylixir.data.pool import CouncilMeta, LogicMeta
+from pylixir.data.pool import CouncilMeta, LogicMeta, get_metadatas
 
-T = TypeVar("T", bound=SupportsRichComparison)
+if TYPE_CHECKING:
+    from _typeshed import SupportsRichComparison
+
+    T = TypeVar("T", bound=SupportsRichComparison)
+else:
+    T = TypeVar("T")
 
 
 def _as_index_map(value_set: set[T]) -> dict[T, int]:
@@ -22,6 +26,7 @@ def _all_logics(
 
 
 class CouncilFeatureBuilder(BaseModel):
+    metadata_map: dict[str, CouncilMeta]
     council_id: dict[str, int]
     council_pickupRatio: dict[int, int]
     council_range: dict[int, int]
@@ -35,6 +40,10 @@ class CouncilFeatureBuilder(BaseModel):
     logic_targetCount: dict[int, int]
     logic_ratio: dict[int, int]
     logic_remainTurn: dict[int, int]
+
+    def get_feature_by_id(self, council_id: str) -> dict[str, int]:
+        council_meta = self.metadata_map[council_id]
+        return self.get_feature(council_meta)
 
     def get_feature(self, meta: CouncilMeta) -> dict[str, int]:
         council_features: dict[str, int] = {
@@ -89,8 +98,10 @@ class CouncilFeatureBuilder(BaseModel):
         }
 
 
-def get_feature_builder(metadata_map: dict[str, CouncilMeta]) -> CouncilFeatureBuilder:
+def get_feature_builder() -> CouncilFeatureBuilder:
+    metadata_map = get_metadatas()
     return CouncilFeatureBuilder(
+        metadata_map=metadata_map,
         council_id=_as_index_map(set(meta.id for meta in metadata_map.values())),
         council_pickupRatio=_as_index_map(
             set(meta.pickupRatio for meta in metadata_map.values())

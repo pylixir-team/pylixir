@@ -8,6 +8,7 @@ from pylixir.core.base import Board, Enchanter
 from pylixir.core.committee import Sage, SageCommittee
 from pylixir.core.progress import Progress
 from pylixir.core.state import CouncilQuery
+from pylixir.envs.feature import get_feature_builder
 
 
 class EmbeddingName(enum.Enum):
@@ -50,7 +51,7 @@ class EmbeddingProvider:
 
     def __init__(self, index_map: dict[str, int]) -> None:
         self._council_id_map = index_map
-
+        self._feature_builder = get_feature_builder()
         self._index_to_action: list[PickCouncilAndEnchantAndRerollAction] = sum(
             [
                 [
@@ -64,6 +65,10 @@ class EmbeddingProvider:
             [],
         )
 
+        self._suggestion_embedding_keys = list(
+            sorted(self._feature_builder.get_feature_by_id("31000").keys())
+        )
+
     def action_index_to_action(
         self, action_index: int
     ) -> PickCouncilAndEnchantAndRerollAction:
@@ -72,7 +77,6 @@ class EmbeddingProvider:
     def create_observation(self, client: Client) -> list[int]:
         state = client.get_state()
 
-        suggestion_vector = self._suggestions_to_vector(state.suggestions)  # 3
         committee_vector = self._committee_to_vector(state.committee)  # 3
 
         progress_vector = self._progress_to_vector(state.progress)  # 2
@@ -81,13 +85,14 @@ class EmbeddingProvider:
         enchanter_vector = self._enchanter_to_vector(
             state.enchanter, state.board.locked_indices()
         )  # 10, x1000
+        suggestion_vector = self._suggestions_to_vector(state.suggestions)  # 3 x []
 
         return (
-            suggestion_vector
-            + committee_vector
+            committee_vector
             + progress_vector
             + board_vector
             + enchanter_vector
+            + suggestion_vector
         )
 
     def current_total_reward(self, client: Client) -> float:
@@ -140,5 +145,9 @@ class EmbeddingProvider:
     def _suggestions_to_vector(
         self, suggestions: tuple[CouncilQuery, CouncilQuery, CouncilQuery]
     ) -> list[int]:
-        council_vector = [self._council_id_map[council.id] for council in suggestions]
+        council_vector = []
+        for council in suggestions:
+            feature = self._feature_builder.get_feature_by_id(council.id)
+            council_vector += [feature[k] for k in self._suggestion_embedding_keys]
+
         return council_vector
