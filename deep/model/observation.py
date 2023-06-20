@@ -15,9 +15,7 @@ from pylixir.application.reducer import (
     PickCouncilAndEnchantAndRerollAction,
     pick_council,
 )
-import torch
 import pydantic
-import torch.nn as nn
 
 import enum
 
@@ -56,18 +54,6 @@ class EmbeddingConfiguration(pydantic.BaseModel):
 
         return order_map[name]
 
-class ActorCriticBuilder(nn.Module):
-    def forward(self):
-        raise NotImplementedError
-
-    def create_actor(self):
-        raise NotImplementedError
-
-    def create_critic(self):
-        raise NotImplementedError
-
-    def render_state(self):
-        raise NotImplementedError
 
 class EmbeddingProvider:
     """This wil create such integer-set, which may suitable and parsed by  EmbeddingRenderer
