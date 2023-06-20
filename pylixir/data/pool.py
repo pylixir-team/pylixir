@@ -41,6 +41,19 @@ class CouncilMeta(pydantic.BaseModel):
         extra = "forbid"
 
 
+def get_metadatas(resource_file_path) -> dict[str, CouncilMeta]:
+    metas: dict[str, CouncilMeta] = {}
+
+    with open(resource_file_path, encoding="utf-8") as f:
+        raws = json.load(f)
+
+    for raw in raws:
+        meta = CouncilMeta.parse_obj(raw)
+        metas[meta.id] = meta
+
+    return metas
+
+
 class CouncilLoader:
     def __init__(
         self,
