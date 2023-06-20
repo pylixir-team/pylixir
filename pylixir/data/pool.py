@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pydantic
 
-from pylixir.application.council import Council, Logic
+from pylixir.application.council import Council, CouncilType, Logic
 from pylixir.data.council.operation import get_operation_classes
 from pylixir.data.council.target import get_target_classes
 from pylixir.data.council_pool import ConcreteCouncilPool
@@ -57,8 +57,8 @@ class CouncilLoader:
             pickup_ratio=meta.pickupRatio,
             turn_range=meta.range,
             slot_type=meta.slotType,
-            descriptions=meta.descriptions,
-            type=meta.type,
+            descriptions=list(meta.descriptions),
+            type=CouncilType(meta.type),
         )
 
     def _get_logic(self, meta: LogicMeta) -> Logic:

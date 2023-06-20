@@ -1,7 +1,21 @@
 import torch
 import torch.nn as nn
 
-from deep.model.observation import EmbeddingConfiguration, ActorCriticBuilder, EmbeddingName
+from deep.model.observation import EmbeddingConfiguration, EmbeddingName
+
+class ActorCriticBuilder(nn.Module):
+    def forward(self):
+        raise NotImplementedError
+
+    def create_actor(self):
+        raise NotImplementedError
+
+    def create_critic(self):
+        raise NotImplementedError
+
+    def render_state(self):
+        raise NotImplementedError
+
 
 
 class BaselineRenderer(ActorCriticBuilder):

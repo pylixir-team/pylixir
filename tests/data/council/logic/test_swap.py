@@ -160,7 +160,7 @@ def testtest_decrease_first_and_swap_is_not_valid_in_reverse_order(
 
     assert not DecreaseFirstTargetAndSwap(
         ratio=0,
-        value=list(reversed(targets)),
+        value=(targets[1], targets[0]),
         remain_turn=1,
     ).is_valid(abundant_state)
 
@@ -185,6 +185,6 @@ def test_starting_state_not_valid(
 
     assert not swap_opration(
         ratio=0,
-        value=[1, 0],
+        value=(1, 0),
         remain_turn=1,
     ).is_valid(abundant_state)

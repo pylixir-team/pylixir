@@ -14,19 +14,22 @@ def clean_state() -> GameState:
             reroll_left=1,
         ),
         board=Board(
-            effects=[
+            effects=(
                 Effect(name="A", value=0, locked=False, max_value=10),
                 Effect(name="B", value=0, locked=False, max_value=10),
                 Effect(name="C", value=0, locked=False, max_value=10),
                 Effect(name="D", value=0, locked=False, max_value=10),
                 Effect(name="E", value=0, locked=False, max_value=10),
-            ],
-            mutations=[],
+            ),
         ),
         committee=SageCommittee(
-            sages=[Sage(power=0, is_removed=False, slot=idx) for idx in range(3)]
+            sages=(
+                Sage(power=0, is_removed=False, slot=0),
+                Sage(power=0, is_removed=False, slot=1),
+                Sage(power=0, is_removed=False, slot=2),
+            )
         ),
-        suggestions=[CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")],
+        suggestions=(CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")),
     )
 
 
@@ -38,19 +41,22 @@ def abundant_state() -> GameState:
             reroll_left=1,
         ),
         board=Board(
-            effects=[
+            effects=(
                 Effect(name="A", value=7, locked=False, max_value=10),
                 Effect(name="B", value=7, locked=False, max_value=10),
                 Effect(name="C", value=5, locked=False, max_value=10),
                 Effect(name="D", value=3, locked=False, max_value=10),
                 Effect(name="E", value=3, locked=False, max_value=10),
-            ],
-            mutations=[],
+            ),
         ),
         committee=SageCommittee(
-            sages=[Sage(power=0, is_removed=False, slot=idx) for idx in range(3)]
+            sages=(
+                Sage(power=0, is_removed=False, slot=0),
+                Sage(power=0, is_removed=False, slot=1),
+                Sage(power=0, is_removed=False, slot=2),
+            )
         ),
-        suggestions=[CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")],
+        suggestions=(CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")),
     )
 
 
@@ -62,17 +68,20 @@ def step_state() -> GameState:
             reroll_left=1,
         ),
         board=Board(
-            effects=[
+            effects=(
                 Effect(name="A", value=1, locked=False, max_value=10),
                 Effect(name="B", value=3, locked=False, max_value=10),
                 Effect(name="C", value=5, locked=False, max_value=10),
                 Effect(name="D", value=7, locked=False, max_value=10),
                 Effect(name="E", value=9, locked=False, max_value=10),
-            ],
-            mutations=[],
+            ),
         ),
         committee=SageCommittee(
-            sages=[Sage(power=0, is_removed=False, slot=idx) for idx in range(3)]
+            sages=(
+                Sage(power=0, is_removed=False, slot=0),
+                Sage(power=0, is_removed=False, slot=1),
+                Sage(power=0, is_removed=False, slot=2),
+            ),
         ),
-        suggestions=[CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")],
+        suggestions=(CouncilQuery(id=""), CouncilQuery(id=""), CouncilQuery(id="")),
     )
