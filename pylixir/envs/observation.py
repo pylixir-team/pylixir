@@ -1,18 +1,13 @@
+import enum
 
-from pylixir.application.game import Client
-from pylixir.core.base import Board
-from pylixir.core.committee import SageCommittee
-from pylixir.core.progress import Progress
-from pylixir.application.council import Council
-from pylixir.core.base import Board, Enchanter
-from pylixir.core.committee import SageCommittee, Sage
-from pylixir.core.progress import Progress
-from pylixir.application.reducer import (
-    PickCouncilAndEnchantAndRerollAction,
-)
 import pydantic
 
-import enum
+from pylixir.application.game import Client
+from pylixir.application.reducer import PickCouncilAndEnchantAndRerollAction
+from pylixir.core.base import Board, Enchanter
+from pylixir.core.committee import Sage, SageCommittee
+from pylixir.core.progress import Progress
+from pylixir.core.state import CouncilQuery
 
 
 class EmbeddingName(enum.Enum):
@@ -40,7 +35,7 @@ class EmbeddingConfiguration(pydantic.BaseModel):
         (EmbeddingName.enchanter, 10),
     ]
 
-    def get_order_offset(self, name: EmbeddingName):
+    def get_order_offset(self, name: EmbeddingName) -> tuple[int, int]:
         order_map = {}
         offset = 0
         for embedding_name, size in self.order:
@@ -51,31 +46,49 @@ class EmbeddingConfiguration(pydantic.BaseModel):
 
 
 class EmbeddingProvider:
-    """This wil create such integer-set, which may suitable and parsed by  EmbeddingRenderer
-    """
+    """This wil create such integer-set, which may suitable and parsed by  EmbeddingRenderer"""
+
     def __init__(self, index_map: dict[str, int]) -> None:
         self._council_id_map = index_map
 
-        self._index_to_action: list[PickCouncilAndEnchantAndRerollAction] = sum([
-            [PickCouncilAndEnchantAndRerollAction(effect_index=effect_index, sage_index=sage_index) for sage_index in range(3)]
-            for effect_index in range(5)
-        ], [])
+        self._index_to_action: list[PickCouncilAndEnchantAndRerollAction] = sum(
+            [
+                [
+                    PickCouncilAndEnchantAndRerollAction(
+                        effect_index=effect_index, sage_index=sage_index
+                    )
+                    for sage_index in range(3)
+                ]
+                for effect_index in range(5)
+            ],
+            [],
+        )
 
-    def action_index_to_action(self, action_index: int)-> PickCouncilAndEnchantAndRerollAction:
+    def action_index_to_action(
+        self, action_index: int
+    ) -> PickCouncilAndEnchantAndRerollAction:
         return self._index_to_action[action_index]
 
     def create_observation(self, client: Client) -> list[int]:
         state = client.get_state()
 
-        suggestion_vector = self._suggestions_to_vector(state.suggestions) # 3
-        committee_vector = self._committee_to_vector(state.committee) # 3
+        suggestion_vector = self._suggestions_to_vector(state.suggestions)  # 3
+        committee_vector = self._committee_to_vector(state.committee)  # 3
 
-        progress_vector = self._progress_to_vector(state.progress) # 2
-        board_vector = self._board_to_vector(state.board) # 5
+        progress_vector = self._progress_to_vector(state.progress)  # 2
+        board_vector = self._board_to_vector(state.board)  # 5
 
-        enchanter_vector = self._enchanter_to_vector(state.enchanter, state.board.locked_indices()) # 10, x1000
+        enchanter_vector = self._enchanter_to_vector(
+            state.enchanter, state.board.locked_indices()
+        )  # 10, x1000
 
-        return (suggestion_vector + committee_vector + progress_vector + board_vector + enchanter_vector)
+        return (
+            suggestion_vector
+            + committee_vector
+            + progress_vector
+            + board_vector
+            + enchanter_vector
+        )
 
     def current_total_reward(self, client: Client) -> float:
         state = client.get_state()
@@ -99,31 +112,33 @@ class EmbeddingProvider:
         second_largest, largest = valid_values[-2:]
         return (largest + second_largest) >= threshold
 
-    def _board_to_vector(self, board: Board):
+    def _board_to_vector(self, board: Board) -> list[int]:
         effect_count = board.get_effect_values()
-        
+
         return effect_count
 
-    def _enchanter_to_vector(self, enchanter: Enchanter, locked: list[int]):
+    def _enchanter_to_vector(
+        self, enchanter: Enchanter, locked: list[int]
+    ) -> list[int]:
         lucky_ratio = enchanter.query_lucky_ratio()
         enchant_prob = enchanter.query_enchant_prob(locked)
 
         return [int(v * 100) for v in lucky_ratio + enchant_prob]
 
-    def _progress_to_vector(self, progress: Progress):
+    def _progress_to_vector(self, progress: Progress) -> list[int]:
         return [progress.turn_left, progress.reroll_left]
 
-    def _sage_to_integer(self, sage: Sage):
+    def _sage_to_integer(self, sage: Sage) -> int:
         if sage.is_removed:
             return 0
-        return sage.power + 7 # 1 ~ 10 
+        return sage.power + 7  # 1 ~ 10
 
-    def _committee_to_vector(self, committee: SageCommittee):
+    def _committee_to_vector(self, committee: SageCommittee) -> list[int]:
         sage_indices = [self._sage_to_integer(sage) for sage in committee.sages]
         return sage_indices
 
-    def _suggestions_to_vector(self, suggestions: tuple[Council, Council, Council]) -> list[int]:
-        council_vector = [
-            self._council_id_map[council.id] for council in suggestions
-        ]
+    def _suggestions_to_vector(
+        self, suggestions: tuple[CouncilQuery, CouncilQuery, CouncilQuery]
+    ) -> list[int]:
+        council_vector = [self._council_id_map[council.id] for council in suggestions]
         return council_vector

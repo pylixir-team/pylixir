@@ -5,9 +5,9 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from deep.model.observation import EmbeddingProvider
 from pylixir.application.game import Client
 from pylixir.data.council.target import UserSelector
+from pylixir.envs.observation import EmbeddingProvider
 from pylixir.interface.cli import ClientBuilder
 
 
