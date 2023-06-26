@@ -1,60 +1,74 @@
+from datetime import datetime
 import os
 from pylixir.envs.PylixirEnv import PylixirEnv
+from stable_baselines3.common.base_class import BaseAlgorithm
+from stable_baselines3.common.callbacks import CheckpointCallback, EveryNTimesteps
+from stable_baselines3.common.logger import configure
 
 ENV_NAME = "Pylixir"
 
-
-def train(train_envs:dict, model_envs:dict):
+def train(train_envs:dict, model_envs:dict, Model:BaseAlgorithm):
     
-    # Env Control
-    env = PylixirEnv()
-    env.seed(0)
-    state_dim = env.observation_space.shape[0]
-    action_dim = env.action_space.n
+      # Env Control
+      env = PylixirEnv()
+      env.seed(0)
+      state_dim = env.observation_space.shape[0]
+      action_dim = env.action_space.n
 
-    # Logging
-    log_f_name = create_log_file(**train_envs)
+      # Logging
+      log_path = create_log_file(**train_envs)
 
-    # Checkpointing
-    checkpoint_path = create_checkpoint_directory(**train_envs)
-    
-    # Painting Settings
-    print("training environment name : " + ENV_NAME)
-    print("--------------------------------------------------------------------------------------------")
-    print("max training timesteps : ", train_envs["max_training_timesteps"])
-    print("max timesteps per episode : ", train_envs["max_ep_len"])
-    print("model saving frequency : " + str(train_envs["save_model_freq"]) + " timesteps")
-    print("log frequency : " + str(train_envs["log_freq"]) + " timesteps")
-    print("printing average reward over episodes in last : " + str(train_envs["print_freq"]) + " timesteps")
-    print("--------------------------------------------------------------------------------------------")
-    print("state space dimension : ", state_dim)
-    print("action space dimension : ", action_dim)
-    print("--------------------------------------------------------------------------------------------")
+      # Checkpointing
+      checkpoint_path, checkpoint_name = create_checkpoint_directory(**train_envs)
+
+      # Saving
+      model_path = create_model_directory(**train_envs)
+      
+      # Paint all settings to console
+      print("training environment name : " + ENV_NAME)
+      print("--------------------------------------------------------------------------------------------")
+      print("max training timesteps : ", train_envs["total_timesteps"])
+      print("model saving frequency : " + str(train_envs["save_model_freq"]) + " timesteps")
+      print("log frequency : " + str(train_envs["log_interval"]) + " timesteps")
+      print("printing average reward over episodes in last : " + str(train_envs["print_freq"]) + " timesteps")
+      print("--------------------------------------------------------------------------------------------")
+      print("state space dimension : ", state_dim)
+      print("action space dimension : ", action_dim)
+      print("--------------------------------------------------------------------------------------------")
+      ## TODO: paint model params too
+
+      # Create Model
+      model = Model(model_envs['policy'], env, verbose=1)
+      new_logger = configure(log_path, ['stdout', 'csv'])
+      model.set_logger(new_logger)   
+      checkpoint_callback = get_checkpoint_callback(train_envs["save_model_freq"], checkpoint_path, checkpoint_name)
+      model.learn(train_envs['total_timesteps'], callback=checkpoint_callback, progress_bar=True, log_interval=train_envs['log_interval'])
+      model.save(model_path)
+
 
 def create_log_file(name:str, **kwargs) -> str:
-    #### log files for multiple runs are NOT overwritten
-    log_dir = f"{name}_logs"
-    if not os.path.exists(log_dir):
-          os.makedirs(log_dir)
-    log_dir = os.path.join(log_dir, ENV_NAME)
-    if not os.path.exists(log_dir):
-          os.makedirs(log_dir)
-    #### get number of log files in log directory
-    current_num_files = next(os.walk(log_dir))[2]
-    run_num = len(current_num_files)
-    #### create new log file for each run
-    log_f_name = os.path.join(log_dir, f'{name}_{ENV_NAME}_log_{run_num}.csv')
-    print("current logging run number for " + ENV_NAME + " : ", run_num)
-    print("logging at : " + log_f_name)
-    return log_f_name
+      #### log files for multiple runs are NOT overwritten
+      log_path = f"log/logs/{name}_logs"
+      if not os.path.exists(log_path):
+            os.makedirs(log_path)
+      print("logging at : " + log_path)
+      return log_path
 
-def create_checkpoint_directory(name:str, run_num_pretrained:int, random_seed:int, **kwargs) -> str:
-    directory = f"{name}_preTrained"
-    if not os.path.exists(directory):
-          os.makedirs(directory)
-    directory = os.path.join(directory, ENV_NAME)
-    if not os.path.exists(directory):
-          os.makedirs(directory)
-    checkpoint_path = os.path.join(directory, f"PPO_{ENV_NAME}_{random_seed}_{run_num_pretrained}.pth")
-    print("save checkpoint path : " + checkpoint_path)
-    return checkpoint_path
+def create_checkpoint_directory(name:str, run_num_pretrained:int, random_seed:int, **kwargs) -> tuple[str]:
+      checkpoint_path = f"log/checkpoints/{name}_checkpoints"
+      if not os.path.exists(checkpoint_path):
+            os.makedirs(checkpoint_path)
+      checkpoint_name = f"{name}_{random_seed}_{run_num_pretrained}"
+      print("save checkpoint path : " + checkpoint_path)
+      return checkpoint_path, checkpoint_name
+
+def create_model_directory(name:str, **kwargs) ->str:
+      model_path = f"model/{name}"
+      if not os.path.exists(model_path):
+            os.makedirs(model_path)
+      print("save model path : " + model_path)
+      return model_path
+
+def get_checkpoint_callback(checkpoint_freq:int, checkpoint_path:str, checkpoint_name:str) -> EveryNTimesteps:
+      callback = CheckpointCallback(save_freq=1, save_path=checkpoint_path, name_prefix=checkpoint_name)
+      return EveryNTimesteps(n_steps=checkpoint_freq, callback=callback)
