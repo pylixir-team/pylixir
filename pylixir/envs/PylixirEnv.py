@@ -22,11 +22,11 @@ class PylixirEnv(gym.Env[Any, Any]):
 
         # fmt: off
         self.observation_space = spaces.MultiDiscrete([
-                                    294, 294, 294, # suggestion_vector
                                     18, 18, 18, # committe_vector
                                     15, 10, # progress_vector(turn_left, reroll)
                                     15, 15, 15, 15, 15, # board_vector
-                                    *[100] * 10])
+                                    *[100] * 10,
+                                    *[2, 4, 295, 5, 3, 8, 5, 10, 29, 5, 3, 8, 5, 10, 29, 56, 9, 9, 5, 8] * 3]) # suggestion_vector
         # fmt: on
         self.action_space = spaces.Discrete(15)
 
@@ -37,7 +37,11 @@ class PylixirEnv(gym.Env[Any, Any]):
         )
 
     def _get_obs(self) -> np.typing.NDArray[np.int64]:
-        return np.array(self._embedding_provider.create_observation(self._client))
+        observation = np.array(self._embedding_provider.create_observation(self._client))
+        clipped_observation = np.minimum(observation, self.observation_space.nvec)
+        if (observation != clipped_observation).any():
+            print(f"Observation space encoding out of range : {observation} {np.argmax(observation != clipped_observation)}")
+        return clipped_observation
 
     def _get_info(self) -> Dict[Any, Any]:
         return {}
