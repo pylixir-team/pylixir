@@ -29,7 +29,7 @@ class EmbeddingConfiguration(pydantic.BaseModel):
     action_dim: int = 15
 
     order: list[tuple[EmbeddingName, int]] = [
-        (EmbeddingName.suggestion, 3),
+        (EmbeddingName.suggestion, 20),
         (EmbeddingName.committee, 3),
         (EmbeddingName.progress, 2),
         (EmbeddingName.board, 5),
