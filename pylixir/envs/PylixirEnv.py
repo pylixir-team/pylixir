@@ -24,8 +24,8 @@ class PylixirEnv(gym.Env[Any, Any]):
         self.observation_space = spaces.MultiDiscrete([
                                     294, 294, 294, # suggestion_vector
                                     18, 18, 18, # committe_vector
-                                    15, 3, # progress_vector(turn_left, reroll)
-                                    11, 11, 11, 11, 11, # board_vector
+                                    15, 10, # progress_vector(turn_left, reroll)
+                                    15, 15, 15, 15, 15, # board_vector
                                     *[100] * 10])
         # fmt: on
         self.action_space = spaces.Discrete(15)
