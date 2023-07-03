@@ -12,6 +12,9 @@ from pylixir.interface.cli import ClientBuilder
 
 
 class PylixirEnv(gym.Env[Any, Any]):
+    observation_space: spaces.MultiDiscrete
+    action_space: spaces.Discrete
+
     def __init__(self, completeness_threshold: int = 16) -> None:
 
         self._client_builder = ClientBuilder()
@@ -37,10 +40,14 @@ class PylixirEnv(gym.Env[Any, Any]):
         )
 
     def _get_obs(self) -> np.typing.NDArray[np.int64]:
-        observation = np.array(self._embedding_provider.create_observation(self._client))
+        observation = np.array(
+            self._embedding_provider.create_observation(self._client)
+        )
         clipped_observation = np.minimum(observation, self.observation_space.nvec)
         if (observation != clipped_observation).any():
-            print(f"Observation space encoding out of range : {observation} {np.argmax(observation != clipped_observation)}")
+            print(
+                f"Observation space encoding out of range : {observation} {np.argmax(observation != clipped_observation)}"
+            )
         return clipped_observation
 
     def _get_info(self) -> Dict[Any, Any]:
