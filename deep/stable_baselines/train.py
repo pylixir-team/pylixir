@@ -31,7 +31,9 @@ def train(
     )
 
     # Saving
-    model_path = create_model_directory(train_envs["name"])
+    model_path = create_model_directory(
+        train_envs["name"], train_envs["run_num_pretrained"]
+    )
 
     # Paint all settings to console
     print("training environment name : " + ENV_NAME)
@@ -94,10 +96,11 @@ def create_checkpoint_directory(
     return checkpoint_path, checkpoint_name
 
 
-def create_model_directory(name: str) -> str:
+def create_model_directory(name: str, run_num_pretrained: int) -> str:
     model_path = f"model/{name}"
     if not os.path.exists(model_path):
         os.makedirs(model_path)
+    model_path = os.path.join(model_path, f"{name}_{run_num_pretrained}")
     print("save model path : " + model_path)
     return model_path
 
