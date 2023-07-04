@@ -10,8 +10,10 @@ from pylixir.data.council.target import UserSelector
 from pylixir.envs.observation import EmbeddingProvider
 from pylixir.interface.cli import ClientBuilder
 
+
 class ObsOutofBoundsException(Exception):
     ...
+
 
 class PylixirEnv(gym.Env[Any, Any]):
     observation_space: spaces.MultiDiscrete
@@ -47,8 +49,12 @@ class PylixirEnv(gym.Env[Any, Any]):
         )
         validation = observation >= self.observation_space.nvec
         if validation.any():
-            error_indices = validation.nonzero()[0]
-            raise ObsOutofBoundsException(f"Observation encoding out of bounds: index {', '.join(map(str, error_indices))}, got {', '.join(map(str, observation[error_indices]))}")
+            indices = validation.nonzero()[0]
+            idx = ", ".join(map(str, indices))
+            value = ", ".join(map(str, observation[indices]))
+            raise ObsOutofBoundsException(
+                f"Observation encoding out of bounds: index {idx}, got {value}"
+            )
         return observation
 
     def _get_info(self) -> Dict[Any, Any]:
