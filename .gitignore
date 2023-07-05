@@ -4,6 +4,8 @@
 .vscode/
 dist/
 docs/_build/
+log
+model
 record.tsv
 report.tsv
 /.stat*

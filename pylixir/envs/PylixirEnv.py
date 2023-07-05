@@ -11,7 +11,14 @@ from pylixir.envs.observation import EmbeddingProvider
 from pylixir.interface.cli import ClientBuilder
 
 
+class ObsOutofBoundsException(Exception):
+    ...
+
+
 class PylixirEnv(gym.Env[Any, Any]):
+    observation_space: spaces.MultiDiscrete
+    action_space: spaces.Discrete
+
     def __init__(self, completeness_threshold: int = 16) -> None:
 
         self._client_builder = ClientBuilder()
@@ -22,11 +29,11 @@ class PylixirEnv(gym.Env[Any, Any]):
 
         # fmt: off
         self.observation_space = spaces.MultiDiscrete([
-                                    294, 294, 294, # suggestion_vector
                                     18, 18, 18, # committe_vector
-                                    15, 3, # progress_vector(turn_left, reroll)
-                                    11, 11, 11, 11, 11, # board_vector
-                                    *[100] * 10])
+                                    15, 10, # progress_vector(turn_left, reroll)
+                                    15, 15, 15, 15, 15, # board_vector
+                                    *[100] * 10,
+                                    *[2, 4, 295, 5, 3, 8, 5, 10, 29, 5, 3, 8, 5, 10, 29, 56, 9, 9, 5, 8] * 3]) # suggestion_vector
         # fmt: on
         self.action_space = spaces.Discrete(15)
 
@@ -37,7 +44,18 @@ class PylixirEnv(gym.Env[Any, Any]):
         )
 
     def _get_obs(self) -> np.typing.NDArray[np.int64]:
-        return np.array(self._embedding_provider.create_observation(self._client))
+        observation = np.array(
+            self._embedding_provider.create_observation(self._client)
+        )
+        validation = observation >= self.observation_space.nvec
+        if validation.any():
+            indices = validation.nonzero()[0]
+            idx = ", ".join(map(str, indices))
+            value = ", ".join(map(str, observation[indices]))
+            raise ObsOutofBoundsException(
+                f"Observation encoding out of bounds: index {idx}, got {value}"
+            )
+        return observation
 
     def _get_info(self) -> Dict[Any, Any]:
         return {}
