@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from typing import Mapping, Union, Type
+from tqdm import trange
 
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import CheckpointCallback, EveryNTimesteps
@@ -67,13 +68,27 @@ def train(
     checkpoint_callback = get_checkpoint_callback(
         train_envs["save_model_freq"], checkpoint_path, checkpoint_name
     )
+    # Train Model
     model.learn(
         train_envs["total_timesteps"],
         callback=checkpoint_callback,
         progress_bar=True,
         log_interval=train_envs["log_interval"],
     )
+    # Save Model
     model.save(model_path)
+    # Evaluate Model
+    av_ep_lens, avg_rewards, success_rate = evaluate_model(model, env, max_seed=train_envs['evaluation_n'])
+    print(
+        "--------------------------------------------------------------------------------------------"
+    )
+    print("average episode length : ", av_ep_lens)
+    print("mean of average reward of each episode : ", avg_rewards)
+    print("success rate (%) : ", success_rate * 100)
+    print(
+        "--------------------------------------------------------------------------------------------"
+    )
+
 
 
 def create_log_file(name: str) -> str:
@@ -112,3 +127,21 @@ def get_checkpoint_callback(
         save_freq=1, save_path=checkpoint_path, name_prefix=checkpoint_name
     )
     return EveryNTimesteps(n_steps=checkpoint_freq, callback=callback)
+
+def evaluate_model(model:BaseAlgorithm, env:PylixirEnv, threshold:int=14, max_seed:int=100000) -> tuple[float, float, float]:
+    av_ep_lens, avg_rewards, success_rate = 0, 0, 0
+    for seed in trange(max_seed):
+        obs, _ = env.reset(seed=seed)
+        terminated = False
+        curr_reward, curr_ep_len = 0, 0
+        while not terminated:
+            action, _ = model.predict(obs, deterministic=True)
+            obs, reward, terminated, _, _ = env.step(action)
+            curr_reward += reward
+            curr_ep_len += 1
+        av_ep_lens += curr_ep_len
+        avg_rewards += curr_reward / curr_ep_len
+        # TODO: remove hard-coding
+        if sum(obs[5:7]) >= threshold:
+            success_rate += 1
+    return tuple(map(lambda x: float(x / max_seed), (av_ep_lens, avg_rewards, success_rate)))
