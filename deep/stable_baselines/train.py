@@ -59,15 +59,17 @@ def train(
     print(
         "--------------------------------------------------------------------------------------------"
     )
-    ## TODO: paint model params too
+    print("model envs:")
+    print(*(model_envs['kwargs']), sep='\n')
 
     # Create Model
-    model = Model(model_envs["policy"], env, model_envs["learning_rate"], verbose=1)
+    model = Model(model_envs["policy"], env, model_envs["learning_rate"], **(model_envs['kwargs']))
     new_logger = configure(log_path, ["stdout", "csv"])
     model.set_logger(new_logger)
     checkpoint_callback = get_checkpoint_callback(
         train_envs["save_model_freq"], checkpoint_path, checkpoint_name
     )
+    print(model.policy)
     # Train Model
     model.learn(
         train_envs["total_timesteps"],

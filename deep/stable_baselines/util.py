@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import TypedDict
+from typing import TypedDict, Union
 
 
 class TrainSettings(TypedDict):
@@ -16,7 +16,7 @@ def get_basic_train_settings(name: str) -> TrainSettings:
     basic_train_setting: TrainSettings = {
         "name": name,
         "random_seed": 0,
-        "total_timesteps": int(10e5),
+        "total_timesteps": int(10e4),
         "print_freq": int(10e2),
         "log_interval": int(10e2),
         "save_model_freq": int(10e4),
@@ -29,3 +29,4 @@ def get_basic_train_settings(name: str) -> TrainSettings:
 class ModelSettings(TypedDict):
     policy: str
     learning_rate: float
+    kwargs: dict # network-specific hyperparams
