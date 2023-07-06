@@ -18,9 +18,12 @@ class ObsOutofBoundsException(Exception):
 class PylixirEnv(gym.Env[Any, Any]):
     observation_space: spaces.MultiDiscrete
     action_space: spaces.Discrete
+    metadata: Dict[str, Any] = {"render_modes": ["human"]}
 
-    def __init__(self, completeness_threshold: int = 16) -> None:
-
+    def __init__(
+        self, render_mode: str = "human", completeness_threshold: int = 16
+    ) -> None:
+        self.render_mode = render_mode
         self._client_builder = ClientBuilder()
 
         self._embedding_provider: EmbeddingProvider
