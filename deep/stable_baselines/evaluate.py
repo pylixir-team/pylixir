@@ -1,9 +1,7 @@
-from tqdm import trange
-
 from stable_baselines3 import DQN
 
-from pylixir.envs.PylixirEnv import PylixirEnv
 from deep.stable_baselines.train import evaluate_model
+from pylixir.envs.PylixirEnv import PylixirEnv
 
 model = DQN.load("./model/DQN/DQN_2.zip")
 env = PylixirEnv()

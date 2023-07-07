@@ -1,5 +1,4 @@
-from abc import ABCMeta
-from typing import TypedDict, Union
+from typing import TypedDict
 
 
 class TrainSettings(TypedDict):
@@ -10,7 +9,8 @@ class TrainSettings(TypedDict):
     log_interval: int  # log avg reward in the interval (in num timesteps)
     save_model_freq: int  # save model frequency (in num timesteps)
     run_num_pretrained: int  # change this to prevent overwriting weights in same env_name folder
-    evaluation_n: int # n of episodes to simulate in evaluation phase
+    evaluation_n: int  # n of episodes to simulate in evaluation phase
+
 
 def get_basic_train_settings(name: str) -> TrainSettings:
     basic_train_setting: TrainSettings = {
@@ -29,4 +29,4 @@ def get_basic_train_settings(name: str) -> TrainSettings:
 class ModelSettings(TypedDict):
     policy: str
     learning_rate: float
-    kwargs: dict # network-specific hyperparams
+    kwargs: dict  # network-specific hyperparams

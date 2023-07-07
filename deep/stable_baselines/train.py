@@ -1,14 +1,13 @@
 import os
-from datetime import datetime
-from typing import Mapping, Union, Type
-from tqdm import trange
+from typing import Type
 
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import CheckpointCallback, EveryNTimesteps
 from stable_baselines3.common.logger import configure
+from tqdm import trange
 
+from deep.stable_baselines.util import ModelSettings, TrainSettings
 from pylixir.envs.PylixirEnv import PylixirEnv
-from deep.stable_baselines.util import TrainSettings, ModelSettings
 
 ENV_NAME = "Pylixir"
 
@@ -60,10 +59,12 @@ def train(
         "--------------------------------------------------------------------------------------------"
     )
     print("model envs:")
-    print(*(model_envs['kwargs'].items()), sep='\n')
+    print(*(model_envs["kwargs"].items()), sep="\n")
 
     # Create Model
-    model = Model(model_envs["policy"], env, model_envs["learning_rate"], **(model_envs['kwargs']))
+    model = Model(
+        model_envs["policy"], env, model_envs["learning_rate"], **(model_envs["kwargs"])
+    )
     new_logger = configure(log_path, ["stdout", "csv"])
     model.set_logger(new_logger)
     checkpoint_callback = get_checkpoint_callback(
@@ -80,7 +81,9 @@ def train(
     # Save Model
     model.save(model_path)
     # Evaluate Model
-    av_ep_lens, avg_rewards, success_rate = evaluate_model(model, env, max_seed=train_envs['evaluation_n'])
+    av_ep_lens, avg_rewards, success_rate = evaluate_model(
+        model, env, max_seed=train_envs["evaluation_n"]
+    )
     print(
         "--------------------------------------------------------------------------------------------"
     )
@@ -92,8 +95,7 @@ def train(
     )
 
 
-
-def create_log_file(name: str, run_num_pretrained:int) -> str:
+def create_log_file(name: str, run_num_pretrained: int) -> str:
     #### log files for multiple runs are NOT overwritten
     log_path = f"log/logs/{name}_{run_num_pretrained}__logs"
     if not os.path.exists(log_path):
@@ -130,7 +132,10 @@ def get_checkpoint_callback(
     )
     return EveryNTimesteps(n_steps=checkpoint_freq, callback=callback)
 
-def evaluate_model(model:BaseAlgorithm, env:PylixirEnv, threshold:int=14, max_seed:int=100000) -> tuple[float, float, float]:
+
+def evaluate_model(
+    model: BaseAlgorithm, env: PylixirEnv, threshold: int = 14, max_seed: int = 100000
+) -> tuple[float, float, float]:
     av_ep_lens, avg_rewards, success_rate = 0, 0, 0
     for seed in trange(max_seed):
         obs, _ = env.reset(seed=seed)
@@ -146,4 +151,6 @@ def evaluate_model(model:BaseAlgorithm, env:PylixirEnv, threshold:int=14, max_se
         # TODO: remove hard-coding
         if sum(obs[5:7]) >= threshold:
             success_rate += 1
-    return tuple(map(lambda x: float(x / max_seed), (av_ep_lens, avg_rewards, success_rate)))
+    return tuple(
+        map(lambda x: float(x / max_seed), (av_ep_lens, avg_rewards, success_rate))
+    )
