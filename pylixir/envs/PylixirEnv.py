@@ -40,12 +40,6 @@ class PylixirEnv(gym.Env[Any, Any]):
         # fmt: on
         self.action_space = spaces.Discrete(15)
 
-    def seed(self, seed: int) -> None:
-        self._client = self._client_builder.get_client(seed)
-        self._embedding_provider = EmbeddingProvider(
-            self._client.get_council_pool_index_map()
-        )
-
     def _get_obs(self) -> np.typing.NDArray[np.int64]:
         observation = np.array(
             self._embedding_provider.create_observation(self._client)
@@ -61,7 +55,11 @@ class PylixirEnv(gym.Env[Any, Any]):
         return observation
 
     def _get_info(self) -> Dict[Any, Any]:
-        return {}
+        total_reward = self._embedding_provider.current_total_reward(self._client)
+        complete = self._embedding_provider.is_complete(
+            self._client, self._completeness_threshold
+        )
+        return {"total_reward": total_reward, "complete": complete}
 
     def render(self) -> None:
         txt = self._client.view()
@@ -73,7 +71,11 @@ class PylixirEnv(gym.Env[Any, Any]):
         if seed is None:
             seed = random.randint(0, 1 << 16)
         super().reset(seed=seed)
-        self.seed(seed)
+        self._client = self._client_builder.get_client(seed)
+        # EmbeddingProvider can be in __init__, but since in this structure EmbeddingProvider need self._client, it is in here.
+        self._embedding_provider = EmbeddingProvider(
+            self._client.get_council_pool_index_map()
+        )
         return self._get_obs(), self._get_info()
 
     def step(
@@ -95,14 +97,10 @@ class PylixirEnv(gym.Env[Any, Any]):
         if not ok:
             reward = -10
             done = True
-            complete = False
             # observation, reward, terminated, truncated, info
             return state, reward, done, False, info
 
         done = self._client.is_done()
-        complete = self._embedding_provider.is_complete(
-            self._client, self._completeness_threshold
-        )
 
         # observation, reward, terminated, truncated, info
         return state, reward, done, False, info
