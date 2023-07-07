@@ -21,7 +21,7 @@ def get_basic_train_settings(name: str) -> TrainSettings:
         "log_interval": int(10e2),
         "save_model_freq": int(10e4),
         "run_num_pretrained": 0,
-        "evaluation_n": int(10e3),
+        "evaluation_n": int(250),
     }
     return basic_train_setting
 

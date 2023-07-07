@@ -18,7 +18,7 @@ def train(
 
     # Env Control
     env = PylixirEnv()
-    env.seed(0)
+    env.reset(0)
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.n
 
@@ -80,9 +80,11 @@ def train(
     )
     # Save Model
     model.save(model_path)
+    # model_path = "log/checkpoints/DQN_checkpoints/DQN_0_2_500000_steps.zip"
+    # model = model.load(model_path)
     # Evaluate Model
     av_ep_lens, avg_rewards, success_rate = evaluate_model(
-        model, env, max_seed=train_envs["evaluation_n"]
+        model, env, max_seed=train_envs["evaluation_n"], render=True
     )
     print(
         "--------------------------------------------------------------------------------------------"
@@ -134,22 +136,23 @@ def get_checkpoint_callback(
 
 
 def evaluate_model(
-    model: BaseAlgorithm, env: PylixirEnv, threshold: int = 14, max_seed: int = 100000
+    model: BaseAlgorithm, env: PylixirEnv, threshold: int = 14, max_seed: int = 100000, render: bool = False
 ) -> tuple[float, float, float]:
     av_ep_lens, avg_rewards, success_rate = 0, 0, 0
     for seed in trange(max_seed):
         obs, _ = env.reset(seed=seed)
+        env.render()
         terminated = False
         curr_reward, curr_ep_len = 0, 0
         while not terminated:
             action, _ = model.predict(obs, deterministic=True)
-            obs, reward, terminated, _, _ = env.step(action)
+            obs, reward, terminated, _, info = env.step(action)
+            env.render()
             curr_reward += reward
             curr_ep_len += 1
         av_ep_lens += curr_ep_len
-        avg_rewards += curr_reward / curr_ep_len
-        # TODO: remove hard-coding
-        if sum(obs[5:7]) >= threshold:
+        avg_rewards += curr_reward
+        if info["total_reward"] >= threshold:
             success_rate += 1
     return tuple(
         map(lambda x: float(x / max_seed), (av_ep_lens, avg_rewards, success_rate))
