@@ -24,7 +24,7 @@ def train(
     action_dim = env.action_space.n
 
     # Logging
-    log_path = create_log_file(train_envs["name"])
+    log_path = create_log_file(train_envs["name"], train_envs["run_num_pretrained"])
 
     # Checkpointing
     checkpoint_path, checkpoint_name = create_checkpoint_directory(
@@ -60,7 +60,7 @@ def train(
         "--------------------------------------------------------------------------------------------"
     )
     print("model envs:")
-    print(*(model_envs['kwargs']), sep='\n')
+    print(*(model_envs['kwargs'].items()), sep='\n')
 
     # Create Model
     model = Model(model_envs["policy"], env, model_envs["learning_rate"], **(model_envs['kwargs']))
@@ -93,9 +93,9 @@ def train(
 
 
 
-def create_log_file(name: str) -> str:
+def create_log_file(name: str, run_num_pretrained:int) -> str:
     #### log files for multiple runs are NOT overwritten
-    log_path = f"log/logs/{name}_logs"
+    log_path = f"log/logs/{name}_{run_num_pretrained}__logs"
     if not os.path.exists(log_path):
         os.makedirs(log_path)
     print("logging at : " + log_path)
