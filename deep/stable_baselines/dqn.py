@@ -10,18 +10,21 @@ class DQNModelSettings(ModelSettings):
 
 
 train_envs = get_basic_train_settings(name="DQN")
+train_envs.update({
+    "run_num_pretrained": 2,
+})
 
 model_envs: DQNModelSettings = {
     "policy": "MlpPolicy", 
     "learning_rate": 0.0001,
     "kwargs": {
         'batch_size': 32,
-        'tau': 1.0,
+        'tau': 0.5,
         'gamma': 0.99,
         'train_freq': 4,
         'policy_kwargs': {
             'activation_fn': torch.nn.ReLU,
-            'net_arch': [64, 64]
+            'net_arch': [128, 128]
         }
     }
 }

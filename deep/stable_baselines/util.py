@@ -16,7 +16,7 @@ def get_basic_train_settings(name: str) -> TrainSettings:
     basic_train_setting: TrainSettings = {
         "name": name,
         "random_seed": 0,
-        "total_timesteps": int(10e4),
+        "total_timesteps": int(50e4),
         "print_freq": int(10e2),
         "log_interval": int(10e2),
         "save_model_freq": int(10e4),
