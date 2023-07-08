@@ -1,3 +1,4 @@
+import pickle
 import random
 from typing import Any, Dict, Optional
 
@@ -49,7 +50,7 @@ class PylixirEnv(gym.Env[Any, Any]):
             indices = validation.nonzero()[0]
             idx = ", ".join(map(str, indices))
             value = ", ".join(map(str, observation[indices]))
-            import pickle
+
             with open("client.pkl", "wb") as f:
                 pickle.dump(self, f)
             raise ObsOutofBoundsException(
