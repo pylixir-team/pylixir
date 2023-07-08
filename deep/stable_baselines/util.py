@@ -3,25 +3,25 @@ from typing import TypedDict
 
 class TrainSettings(TypedDict):
     name: str
-    random_seed: int  # set random seed if required (0 = no random seed)
+    expname: str
     total_timesteps: int
-    print_freq: int  # print avg reward in the interval (in num timesteps)
     log_interval: int  # log avg reward in the interval (in num timesteps)
-    save_model_freq: int  # save model frequency (in num timesteps)
-    run_num_pretrained: int  # change this to prevent overwriting weights in same env_name folder
+    checkpoint_freq: int
+    eval_freq: int
     evaluation_n: int  # n of episodes to simulate in evaluation phase
+    n_envs: int
 
 
 def get_basic_train_settings(name: str) -> TrainSettings:
     basic_train_setting: TrainSettings = {
         "name": name,
-        "random_seed": 0,
-        "total_timesteps": int(50e4),
-        "print_freq": int(10e2),
-        "log_interval": int(10e2),
-        "save_model_freq": int(10e4),
-        "run_num_pretrained": 0,
+        "expname": "",
+        "total_timesteps": int(5e5),
+        "log_interval": int(1e3),
+        "checkpoint_freq": int(1e5),
+        "eval_freq": int(1e5),
         "evaluation_n": int(250),
+        "n_envs": 1,
     }
     return basic_train_setting
 
@@ -29,4 +29,5 @@ def get_basic_train_settings(name: str) -> TrainSettings:
 class ModelSettings(TypedDict):
     policy: str
     learning_rate: float
+    seed: float
     kwargs: dict  # network-specific hyperparams

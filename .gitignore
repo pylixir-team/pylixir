@@ -5,6 +5,7 @@
 dist/
 docs/_build/
 log
+logs
 model
 record.tsv
 report.tsv
