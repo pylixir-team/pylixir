@@ -35,7 +35,7 @@ class PylixirEnv(gym.Env[Any, Any]):
                                     18, 18, 18, # committe_vector
                                     15, 10, # progress_vector(turn_left, reroll)
                                     15, 15, 15, 15, 15, # board_vector
-                                    *[100] * 10,
+                                    *[101] * 10,
                                     *[2, 4, 295, 5, 3, 8, 5, 10, 29, 5, 3, 8, 5, 10, 29, 56, 9, 9, 5, 8] * 3]) # suggestion_vector
         # fmt: on
         self.action_space = spaces.Discrete(15)
@@ -49,6 +49,9 @@ class PylixirEnv(gym.Env[Any, Any]):
             indices = validation.nonzero()[0]
             idx = ", ".join(map(str, indices))
             value = ", ".join(map(str, observation[indices]))
+            import pickle
+            with open("client.pkl", "wb") as f:
+                pickle.dump(self, f)
             raise ObsOutofBoundsException(
                 f"Observation encoding out of bounds: index {idx}, got {value}"
             )
@@ -81,12 +84,14 @@ class PylixirEnv(gym.Env[Any, Any]):
     def step(
         self, action: int
     ) -> tuple[np.typing.NDArray[np.int64], float, bool, bool, Dict[Any, Any]]:
-        action_object = self._embedding_provider.action_index_to_action(action)
         previous_total_reward = self._embedding_provider.current_total_reward(
             self._client
         )
-
-        ok = self._client.pick(action_object.sage_index, action_object.effect_index)
+        if action >= 15:
+            ok = self._client.reroll()
+        else:
+            action_object = self._embedding_provider.action_index_to_action(action)
+            ok = self._client.pick(action_object.sage_index, action_object.effect_index)
         state = self._get_obs()
         reward = (
             self._embedding_provider.current_total_reward(self._client)
