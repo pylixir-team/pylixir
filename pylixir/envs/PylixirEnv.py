@@ -6,7 +6,6 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from pylixir.application.game import Client
 from pylixir.data.council.target import UserSelector
 from pylixir.envs.observation import EmbeddingProvider
 from pylixir.interface.cli import ClientBuilder
@@ -27,9 +26,11 @@ class PylixirEnv(gym.Env[Any, Any]):
         self.render_mode = render_mode
         self._client_builder = ClientBuilder()
 
-        self._embedding_provider: EmbeddingProvider
         self._completeness_threshold = completeness_threshold
-        self._client: Client
+        self._client = self._client_builder.get_client(0)
+        self._embedding_provider = EmbeddingProvider(
+            self._client.get_council_pool_index_map()
+        )
 
         # fmt: off
         self.observation_space = spaces.MultiDiscrete([
@@ -76,10 +77,6 @@ class PylixirEnv(gym.Env[Any, Any]):
             seed = random.randint(0, 1 << 16)
         super().reset(seed=seed)
         self._client = self._client_builder.get_client(seed)
-        # EmbeddingProvider can be in __init__, but since in this structure EmbeddingProvider need self._client, it is in here.
-        self._embedding_provider = EmbeddingProvider(
-            self._client.get_council_pool_index_map()
-        )
         return self._get_obs(), self._get_info()
 
     def step(
@@ -88,7 +85,7 @@ class PylixirEnv(gym.Env[Any, Any]):
         previous_total_reward = self._embedding_provider.current_total_reward(
             self._client
         )
-        if action >= 15:
+        if action == 15:
             ok = self._client.reroll()
         else:
             action_object = self._embedding_provider.action_index_to_action(action)
