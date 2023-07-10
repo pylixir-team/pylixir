@@ -65,6 +65,8 @@ class Client:
         return False if reroll action is forbidden. This may occur hwne there is no reroll action left.
         """
         self._set_previous_board_as_now()
+        if self._state.progress.reroll_left <= 0:
+            return False
         self._state = reroll(
             self._state,
             self._randomness,
