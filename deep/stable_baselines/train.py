@@ -200,18 +200,20 @@ def evaluate_model(
     av_ep_lens, avg_rewards, success_rate = 0, 0, 0
     for seed in trange(max_seed):
         obs, _ = env.reset(seed=seed)
-        env.render()
+        if render:
+            env.render()
         terminated = False
         curr_reward, curr_ep_len = 0, 0
         while not terminated:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, terminated, _, info = env.step(action)
-            env.render()
+            if render:
+                env.render()
             curr_reward += reward
             curr_ep_len += 1
         av_ep_lens += curr_ep_len
         avg_rewards += curr_reward
-        if info["total_reward"] >= threshold:
+        if info["current_valuation"] >= threshold:
             success_rate += 1
     return tuple(
         map(lambda x: float(x / max_seed), (av_ep_lens, avg_rewards, success_rate))
@@ -223,7 +225,7 @@ def evaluate(
     def callback(local_vars, global_vars):
         nonlocal cnt # or global cnt for global variable cnt
         if local_vars["done"]:
-            cnt += local_vars["info"]["total_reward"] >= threshold
+            cnt += local_vars["info"]["current_valuation"] >= threshold
     now = time.time()
     cnt = 0
     # random.seed(37)

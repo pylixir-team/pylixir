@@ -108,6 +108,23 @@ class EmbeddingProvider:
 
         return first + second
 
+    def current_valuation(
+        self, client: Client, index: tuple[int, int] = (0, 1)
+    ) -> float:
+        state = client.get_state()
+        values = state.board.get_effect_values()
+        alived_indices = state.board.unlocked_indices()
+
+        i, j = index
+        first, second = values[i], values[j]
+
+        if i not in alived_indices:
+            first = 0
+        if j not in alived_indices:
+            second = 0
+
+        return first + second
+
     def is_complete(self, client: Client, threshold: int) -> bool:
         state = client.get_state()
         values = state.board.get_effect_values()

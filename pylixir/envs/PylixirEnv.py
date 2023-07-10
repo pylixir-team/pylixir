@@ -64,7 +64,13 @@ class PylixirEnv(gym.Env[Any, Any]):
         complete = self._embedding_provider.is_complete(
             self._client, self._completeness_threshold
         )
-        return {"total_reward": total_reward, "complete": complete}
+        return {
+            "total_reward": total_reward,
+            "complete": complete,
+            "current_valuation": self._embedding_provider.current_valuation(
+                self._client
+            ),
+        }
 
     def render(self) -> None:
         txt = self._client.view()
