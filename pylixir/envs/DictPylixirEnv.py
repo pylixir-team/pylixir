@@ -1,9 +1,8 @@
 import enum
 import random
-from typing import Any, Dict, Optional, TypedDict
+from typing import Any, Dict, Optional, TypedDict, Union
 
 import gymnasium as gym
-import numpy as np
 from gymnasium import spaces
 
 from pylixir.data.council.target import UserSelector
@@ -20,29 +19,26 @@ class ObservationType(enum.Enum):
     continuous = "continuous"
 
 
-class ObservationChunk(TypedDict):
-    count: Optional[int]
+class ObservationChunk(TypedDict, total=False):
     kwd: str
     size: int
     type: ObservationType
+    low: float
+    high: float
 
 
-class ObservationSchema:
-    def __init__(self):
+class DictObservationSchema:
+    def __init__(self) -> None:
         self._space: list[ObservationChunk] = []
 
-        self._discrete_space = []
-        self._continuous_space = []
-
-    def discrete(self, kwd, size):
-        self._discrete_space.append((kwd, size))
+    def discrete(self, kwd: str, size: int) -> None:
         self._space.append({"kwd": kwd, "size": size, "type": ObservationType.discrete})
 
-    def discrete_series(self, kwd, size, count):
+    def discrete_series(self, kwd: str, size: int, count: int) -> None:
         for idx in range(count):
             self.discrete(f"{kwd}_{idx}", size)
 
-    def continuous(self, kwd, size, low, high):
+    def continuous(self, kwd: str, size: int, low: float, high: float) -> None:
         self._space.append(
             {
                 "kwd": kwd,
@@ -53,31 +49,17 @@ class ObservationSchema:
             }
         )
 
-    def _chunks_to_space(self, chunks: list[ObservationChunk]):
-        if len(chunks) == 0:
-            return []
-
-        if chunks[0]["type"] == ObservationType.discrete:
-            return [spaces.MultiDiscrete([chunk["size"] for chunk in chunks])]
-
-        return [
-            spaces.Box(
-                chunk["low"],
-                chunk["high"],
-                (chunk["size"],),
-            )
-            for chunk in chunks
-        ]
-
-    def get_space(self):
-        obs = {}
+    def get_space(self) -> spaces.Dict:
+        obs: dict[str, spaces.Space[Any]] = {}
 
         for space in self._space:
             if space["type"] == ObservationType.discrete:
                 obs[space["kwd"]] = spaces.Discrete(space["size"])
             elif space["type"] == ObservationType.continuous:
                 obs[space["kwd"]] = spaces.Box(
-                    space["low"], space["high"], (space["size"],)
+                    space["low"],
+                    space["high"],
+                    (space["size"],),
                 )
             else:
                 raise ValueError
@@ -85,8 +67,8 @@ class ObservationSchema:
         return spaces.Dict(obs)
 
 
-def get_observation_schema():
-    schema = ObservationSchema()
+def get_observation_schema() -> DictObservationSchema:
+    schema = DictObservationSchema()
     schema.continuous("enchant_lucky", 5, low=0.0, high=1.0)
     schema.continuous("enchant_prob", 5, low=0.0, high=1.0)
 
@@ -122,7 +104,7 @@ def get_observation_schema():
 
 
 class DictPylixirEnv(gym.Env[Any, Any]):
-    observation_space: spaces.MultiDiscrete
+    observation_space: spaces.Dict
     action_space: spaces.Discrete
     metadata: Dict[str, Any] = {"render_modes": ["human"]}
 
@@ -142,7 +124,7 @@ class DictPylixirEnv(gym.Env[Any, Any]):
         self.observation_space = get_observation_schema().get_space()  # fmt: on
         self.action_space = spaces.Discrete(15 + 1)
 
-    def _get_obs(self) -> np.typing.NDArray[np.int64]:
+    def _get_obs(self) -> dict[str, Union[int, list[float]]]:
         return self._embedding_provider.create_observation(self._client)
 
     def _get_info(self) -> Dict[Any, Any]:
@@ -164,7 +146,7 @@ class DictPylixirEnv(gym.Env[Any, Any]):
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[dict[str, Any]] = None
-    ) -> tuple[np.typing.NDArray[np.int64], Dict[Any, Any]]:
+    ) -> tuple[Dict[Any, Any], Dict[Any, Any]]:
         if seed is None:
             seed = random.randint(0, 1 << 16)
         super().reset(seed=seed)
@@ -173,7 +155,7 @@ class DictPylixirEnv(gym.Env[Any, Any]):
 
     def step(
         self, action: int
-    ) -> tuple[np.typing.NDArray[np.int64], float, bool, bool, Dict[Any, Any]]:
+    ) -> tuple[Dict[Any, Any], float, bool, bool, Dict[Any, Any]]:
         previous_total_reward = self._embedding_provider.current_total_reward(
             self._client
         )

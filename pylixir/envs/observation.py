@@ -1,4 +1,5 @@
 import enum
+from typing import Union
 
 import pydantic
 
@@ -196,10 +197,10 @@ class DictObservation:
     ) -> PickCouncilAndEnchantAndRerollAction:
         return self._index_to_action[action_index]
 
-    def create_observation(self, client: Client) -> list[int]:
+    def create_observation(self, client: Client) -> dict[str, Union[int, list[float]]]:
         state = client.get_state()
 
-        vector = {}
+        vector: dict[str, Union[int, list[float]]] = {}
         vector.update(self._committee_to_vector(state.committee))  # 3
 
         vector.update(self._progress_to_vector(state.progress))  # 2
@@ -251,20 +252,20 @@ class DictObservation:
         second_largest, largest = valid_values[-2:]
         return (largest + second_largest) >= threshold
 
-    def _board_to_vector(self, board: Board) -> list[int]:
+    def _board_to_vector(self, board: Board) -> dict[str, int]:
         effect_count = board.get_effect_values()
 
         return {f"board_{idx}": cnt for idx, cnt in enumerate(effect_count)}
 
     def _enchanter_to_vector(
         self, enchanter: Enchanter, locked: list[int]
-    ) -> list[int]:
+    ) -> dict[str, list[float]]:
         return {
             "enchant_lucky": enchanter.query_lucky_ratio(),
             "enchant_prob": enchanter.query_enchant_prob(locked),
         }
 
-    def _progress_to_vector(self, progress: Progress) -> list[int]:
+    def _progress_to_vector(self, progress: Progress) -> dict[str, int]:
         return {"turn_left": progress.turn_left, "reroll": progress.reroll_left}
 
     def _sage_to_integer(self, sage: Sage) -> int:
@@ -272,7 +273,7 @@ class DictObservation:
             return 0
         return sage.power + 7  # 1 ~ 10
 
-    def _committee_to_vector(self, committee: SageCommittee) -> list[int]:
+    def _committee_to_vector(self, committee: SageCommittee) -> dict[str, int]:
         return {
             f"committee_{idx}": self._sage_to_integer(sage)
             for idx, sage in enumerate(committee.sages)
@@ -280,7 +281,7 @@ class DictObservation:
 
     def _suggestions_to_vector(
         self, suggestions: tuple[CouncilQuery, CouncilQuery, CouncilQuery]
-    ) -> list[int]:
+    ) -> dict[str, int]:
         council_vector = {}
         for idx, council in enumerate(suggestions):
             feature = self._feature_builder.get_feature_by_id(council.id)

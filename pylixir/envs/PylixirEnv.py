@@ -16,25 +16,21 @@ class ObsOutofBoundsException(Exception):
 
 
 class ObservationSchema:
-    def __init__(self):
-        self._discrete_space = []
-        self._continuous_space = []
+    def __init__(self) -> None:
+        self._discrete_space: list[tuple[str, int]] = []
 
-    def discrete(self, kwd, size):
+    def discrete(self, kwd: str, size: int) -> None:
         self._discrete_space.append((kwd, size))
 
-    def discrete_series(self, kwd, size, count):
+    def discrete_series(self, kwd: str, size: int, count: int) -> None:
         for idx in range(count):
             self.discrete(f"{kwd}_{idx}", size)
 
-    def continuous(self, kwd, size):
-        self._continuous_space.append((kwd, size))
-
-    def get_space(self):
+    def get_space(self) -> spaces.MultiDiscrete:
         return spaces.MultiDiscrete([size for _, size in self._discrete_space])
 
 
-def get_observation_schema():
+def get_observation_schema() -> ObservationSchema:
     schema = ObservationSchema()
     schema.discrete_series("committee", 18, 3)
     schema.discrete("turn_left", 15)
