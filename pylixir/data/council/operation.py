@@ -217,6 +217,9 @@ class LockTarget(ElixirOperation):
     def is_valid(self, state: GameState) -> bool:
         return state.requires_lock()
 
+    def is_lock_operation(self) -> bool:
+        return True
+
 
 class IncreaseReroll(AlwaysValidOperation):
     """조언이 더 필요한가? 다른 조언 보기 횟수를 <2>회 늘려주지."""

@@ -3,9 +3,9 @@ from stable_baselines3 import DQN
 from deep.stable_baselines.train import evaluate_model
 from pylixir.envs.PylixirEnv import PylixirEnv
 
-model = DQN.load("./model/DQN/DQN_2.zip")
+model = DQN.load("./logs/checkpoints/DQN/rl_model_1000000_steps.zip")
 env = PylixirEnv()
-av_ep_lens, avg_rewards, success_rate = evaluate_model(model, env, max_seed=int(10e3))
+av_ep_lens, avg_rewards, success_rate = evaluate_model(model, env, max_seed=10000, threshold=14, render=False)
 print(
     "--------------------------------------------------------------------------------------------"
 )

@@ -60,6 +60,11 @@ class ElixirOperation(pydantic.BaseModel, metaclass=abc.ABCMeta):
     ) -> bool:
         return True
 
+    def is_lock_operation(
+        self,
+    ) -> bool:
+        return False
+
     @classmethod
     def get_type(cls) -> str:
         class_name = cls.__name__
@@ -83,6 +88,12 @@ class Logic(pydantic.BaseModel):
         return new_state
 
     def is_valid(self, state: GameState) -> bool:
+        if self.operation.is_lock_operation() and hasattr(self.target_selector, "target_index"):
+            return (
+                self.operation.is_valid(state)
+                and (getattr(self.target_selector, "target_index") in state.board.unlocked_indices())
+            )
+
         return (
             self.operation.is_valid(state)
             and self.target_selector.is_valid(state)

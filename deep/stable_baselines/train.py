@@ -12,9 +12,9 @@ from tqdm import trange
 
 from deep.stable_baselines.util import ModelSettings, TrainSettings
 from pylixir.envs import register_env
-from pylixir.envs.PylixirEnv import PylixirEnv
+from pylixir.envs.DictPylixirEnv import DictPylixirEnv
 
-ENV_NAME = "Pylixir"
+ENV_NAME = "DictPylixirEnv"
 
 
 class CustomCallback(BaseCallback):
@@ -23,7 +23,7 @@ class CustomCallback(BaseCallback):
 
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
-    def __init__(self, verbose=0, eval_freq=10000, n_eval_episodes=200):
+    def __init__(self, verbose=0, eval_freq=10000, n_eval_episodes=1000):
         super(CustomCallback, self).__init__(verbose)
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
@@ -93,10 +93,9 @@ def train(
     n_envs = train_envs["n_envs"]
     # Env Control
     register_env()
-    env = make_vec_env("pylixir/PylixirEnv-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs)
+    env = make_vec_env("pylixir/DictPylixirEnv-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs)
     # env = PylixirEnv()
     # env.reset(0)
-    state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.n
 
     # Paint all settings to console
@@ -112,7 +111,6 @@ def train(
     print(
         "--------------------------------------------------------------------------------------------"
     )
-    print("state space dimension : ", state_dim)
     print("action space dimension : ", action_dim)
     print(
         "--------------------------------------------------------------------------------------------"
@@ -142,7 +140,7 @@ def train(
         log_interval=train_envs["log_interval"],
     )
     # Save Model
-    model_path = f"logs/checkpoints/{train_envs['name']}/latest.zip"
+    model_path = f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}/latest.zip"
     model.save(model_path)
     # model.set_parameters(model_path)
 
@@ -223,16 +221,27 @@ def evaluate(
     model: BaseAlgorithm, env: Union[gym.Env, VecEnv], threshold: int = 14, max_seed: int = 100000, render: bool = False
 ):
     def callback(local_vars, global_vars):
-        nonlocal cnt # or global cnt for global variable cnt
+        nonlocal success_rate_14, success_rate_16, success_rate_18
+        nonlocal average_enchant_count # or global cnt for global variable cnt
         if local_vars["done"]:
-            cnt += local_vars["info"]["current_valuation"] >= threshold
+            success_rate_14 += local_vars["info"]["current_valuation"] >= 14
+            success_rate_16 += local_vars["info"]["current_valuation"] >= 16
+            success_rate_18 += local_vars["info"]["current_valuation"] >= 18
+            average_enchant_count += local_vars["info"]["current_valuation"]
+
     now = time.time()
-    cnt = 0
+    success_rate_14 = 0
+    success_rate_16 = 0
+    success_rate_18 = 0
+    average_enchant_count = 0
+
     # random.seed(37)
     mean, std = evaluate_policy(model, env, n_eval_episodes=max_seed, render=render, callback=callback)
-    success_rate = cnt / max_seed * 100
     print(f"mean: {mean}, std: {std}")
-    print(f"Success rate (%): {cnt / max_seed * 100}")
+    print(f"Success rate[14] (%): {success_rate_14 / max_seed * 100}")
+    print(f"Success rate[16] (%): {success_rate_16 / max_seed * 100}")
+    print(f"Success rate[18] (%): {success_rate_18 / max_seed * 100}")
+    print(f"Average enchant count: {average_enchant_count / max_seed}")
     print(f"Time taken: {time.time() - now}")
     print(f"max_seed: {max_seed}")
-    return mean, std, success_rate
+    return mean / max_seed, std / max_seed, success_rate_14
