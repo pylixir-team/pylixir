@@ -88,10 +88,10 @@ class EmbeddingProvider:
         suggestion_vector = self._suggestions_to_vector(state.suggestions)  # 3 x []
 
         return (
-            enchanter_vector
-            + committee_vector
+            committee_vector
             + progress_vector
             + board_vector
+            + enchanter_vector
             + suggestion_vector
         )
 
