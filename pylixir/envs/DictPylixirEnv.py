@@ -1,7 +1,6 @@
-import pickle
+import enum
 import random
 from typing import Any, Dict, Optional, TypedDict
-import enum
 
 import gymnasium as gym
 import numpy as np
@@ -16,10 +15,10 @@ class ObsOutofBoundsException(Exception):
     ...
 
 
-
 class ObservationType(enum.Enum):
     discrete = "discrete"
     continuous = "continuous"
+
 
 class ObservationChunk(TypedDict):
     count: Optional[int]
@@ -28,7 +27,7 @@ class ObservationChunk(TypedDict):
     type: ObservationType
 
 
-class ObservationSchema():
+class ObservationSchema:
     def __init__(self):
         self._space: list[ObservationChunk] = []
 
@@ -37,38 +36,38 @@ class ObservationSchema():
 
     def discrete(self, kwd, size):
         self._discrete_space.append((kwd, size))
-        self._space.append({
-            "kwd": kwd,
-            "size": size,
-            "type": ObservationType.discrete
-        })
+        self._space.append({"kwd": kwd, "size": size, "type": ObservationType.discrete})
 
     def discrete_series(self, kwd, size, count):
         for idx in range(count):
-            self.discrete(f'{kwd}_{idx}', size)
+            self.discrete(f"{kwd}_{idx}", size)
 
     def continuous(self, kwd, size, low, high):
-        self._space.append({
-            "kwd": kwd,
-            "size": size,
-            "type": ObservationType.continuous,
-            "low": low,
-            "high": high
-        })
+        self._space.append(
+            {
+                "kwd": kwd,
+                "size": size,
+                "type": ObservationType.continuous,
+                "low": low,
+                "high": high,
+            }
+        )
 
     def _chunks_to_space(self, chunks: list[ObservationChunk]):
         if len(chunks) == 0:
             return []
 
         if chunks[0]["type"] == ObservationType.discrete:
-            return [spaces.MultiDiscrete([
-                chunk["size"] for chunk in chunks
-            ])]
-        else:
-            return [spaces.Box(
-                chunk["low"], chunk["high"],
+            return [spaces.MultiDiscrete([chunk["size"] for chunk in chunks])]
+
+        return [
+            spaces.Box(
+                chunk["low"],
+                chunk["high"],
                 (chunk["size"],),
-            ) for chunk in chunks]
+            )
+            for chunk in chunks
+        ]
 
     def get_space(self):
         obs = {}
@@ -77,7 +76,9 @@ class ObservationSchema():
             if space["type"] == ObservationType.discrete:
                 obs[space["kwd"]] = spaces.Discrete(space["size"])
             elif space["type"] == ObservationType.continuous:
-                obs[space["kwd"]] = spaces.Box(space["low"], space["high"], (space["size"],))
+                obs[space["kwd"]] = spaces.Box(
+                    space["low"], space["high"], (space["size"],)
+                )
             else:
                 raise ValueError
 
@@ -86,38 +87,39 @@ class ObservationSchema():
 
 def get_observation_schema():
     schema = ObservationSchema()
-    schema.continuous('enchant_lucky', 5, low=0.0, high=1.0)
-    schema.continuous('enchant_prob', 5, low=0.0, high=1.0)
+    schema.continuous("enchant_lucky", 5, low=0.0, high=1.0)
+    schema.continuous("enchant_prob", 5, low=0.0, high=1.0)
 
-    schema.discrete_series('committee', 18, 3)
-    schema.discrete('turn_left', 15)
-    schema.discrete('reroll', 10)
-    schema.discrete_series('board', 15, 5)
+    schema.discrete_series("committee", 18, 3)
+    schema.discrete("turn_left", 15)
+    schema.discrete("reroll", 10)
+    schema.discrete_series("board", 15, 5)
 
     for idx in range(3):
         prefix = f"suggestion_{idx}"
-        schema.discrete(f'{prefix}_applyImmediately', 2)
-        schema.discrete(f'{prefix}_applyLimit', 4)
-        schema.discrete(f'{prefix}_id', 295)
-        schema.discrete(f'{prefix}_logic_0_ratio', 5)
-        schema.discrete(f'{prefix}_logic_0_remainTurn', 3)
-        schema.discrete(f'{prefix}_logic_0_targetCondition', 8)
-        schema.discrete(f'{prefix}_logic_0_targetCount', 5)
-        schema.discrete(f'{prefix}_logic_0_targetType', 10)
-        schema.discrete(f'{prefix}_logic_0_type', 29)
-        schema.discrete(f'{prefix}_logic_1_ratio', 5)
-        schema.discrete(f'{prefix}_logic_1_remainTurn', 3)
-        schema.discrete(f'{prefix}_logic_1_targetCondition', 8)
-        schema.discrete(f'{prefix}_logic_1_targetCount', 5)
-        schema.discrete(f'{prefix}_logic_1_targetType', 10)
-        schema.discrete(f'{prefix}_logic_1_type', 29)
-        schema.discrete(f'{prefix}_pickupRatio', 56)
-        schema.discrete(f'{prefix}_range0', 9)
-        schema.discrete(f'{prefix}_range1', 9)
-        schema.discrete(f'{prefix}_slotType', 5)
-        schema.discrete(f'{prefix}_type', 8)
+        schema.discrete(f"{prefix}_applyImmediately", 2)
+        schema.discrete(f"{prefix}_applyLimit", 4)
+        schema.discrete(f"{prefix}_id", 295)
+        schema.discrete(f"{prefix}_logic_0_ratio", 5)
+        schema.discrete(f"{prefix}_logic_0_remainTurn", 3)
+        schema.discrete(f"{prefix}_logic_0_targetCondition", 8)
+        schema.discrete(f"{prefix}_logic_0_targetCount", 5)
+        schema.discrete(f"{prefix}_logic_0_targetType", 10)
+        schema.discrete(f"{prefix}_logic_0_type", 29)
+        schema.discrete(f"{prefix}_logic_1_ratio", 5)
+        schema.discrete(f"{prefix}_logic_1_remainTurn", 3)
+        schema.discrete(f"{prefix}_logic_1_targetCondition", 8)
+        schema.discrete(f"{prefix}_logic_1_targetCount", 5)
+        schema.discrete(f"{prefix}_logic_1_targetType", 10)
+        schema.discrete(f"{prefix}_logic_1_type", 29)
+        schema.discrete(f"{prefix}_pickupRatio", 56)
+        schema.discrete(f"{prefix}_range0", 9)
+        schema.discrete(f"{prefix}_range1", 9)
+        schema.discrete(f"{prefix}_slotType", 5)
+        schema.discrete(f"{prefix}_type", 8)
 
     return schema
+
 
 class DictPylixirEnv(gym.Env[Any, Any]):
     observation_space: spaces.MultiDiscrete
@@ -137,7 +139,7 @@ class DictPylixirEnv(gym.Env[Any, Any]):
         )
 
         # fmt: off
-        self.observation_space = get_observation_schema().get_space()      # fmt: on
+        self.observation_space = get_observation_schema().get_space()  # fmt: on
         self.action_space = spaces.Discrete(15 + 1)
 
     def _get_obs(self) -> np.typing.NDArray[np.int64]:

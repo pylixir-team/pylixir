@@ -145,7 +145,7 @@ class EmbeddingProvider:
         lucky_ratio = enchanter.query_lucky_ratio()
         enchant_prob = enchanter.query_enchant_prob(locked)
 
-        return [v for v in lucky_ratio + enchant_prob]
+        return [int(v * 100) for v in lucky_ratio + enchant_prob]
 
     def _progress_to_vector(self, progress: Progress) -> list[int]:
         return [progress.turn_left, progress.reroll_left]
@@ -205,9 +205,9 @@ class DictObservation:
         vector.update(self._progress_to_vector(state.progress))  # 2
         vector.update(self._board_to_vector(state.board))  # 5
 
-        vector.update( self._enchanter_to_vector(
-            state.enchanter, state.board.locked_indices()
-        ))  # 10, x1000
+        vector.update(
+            self._enchanter_to_vector(state.enchanter, state.board.locked_indices())
+        )  # 10, x1000
         vector.update(self._suggestions_to_vector(state.suggestions))  # 3 x []
 
         return vector
@@ -254,23 +254,18 @@ class DictObservation:
     def _board_to_vector(self, board: Board) -> list[int]:
         effect_count = board.get_effect_values()
 
-        return {
-            f"board_{idx}": cnt for idx, cnt in enumerate(effect_count)
-        }
+        return {f"board_{idx}": cnt for idx, cnt in enumerate(effect_count)}
 
     def _enchanter_to_vector(
         self, enchanter: Enchanter, locked: list[int]
     ) -> list[int]:
         return {
             "enchant_lucky": enchanter.query_lucky_ratio(),
-            "enchant_prob": enchanter.query_enchant_prob(locked)
-        } 
+            "enchant_prob": enchanter.query_enchant_prob(locked),
+        }
 
     def _progress_to_vector(self, progress: Progress) -> list[int]:
-        return {
-            "turn_left": progress.turn_left,
-            "reroll": progress.reroll_left
-        }
+        return {"turn_left": progress.turn_left, "reroll": progress.reroll_left}
 
     def _sage_to_integer(self, sage: Sage) -> int:
         if sage.is_removed:
@@ -289,9 +284,11 @@ class DictObservation:
         council_vector = {}
         for idx, council in enumerate(suggestions):
             feature = self._feature_builder.get_feature_by_id(council.id)
-            council_vector.update({
-                f"suggestion_{idx}_{k}": feature[k]
-                for k in self._suggestion_embedding_keys
-            }) 
+            council_vector.update(
+                {
+                    f"suggestion_{idx}_{k}": feature[k]
+                    for k in self._suggestion_embedding_keys
+                }
+            )
 
         return council_vector

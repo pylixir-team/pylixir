@@ -1,7 +1,7 @@
 from gymnasium.envs.registration import register
 
-from pylixir.envs.PylixirEnv import PylixirEnv
 from pylixir.envs.DictPylixirEnv import DictPylixirEnv
+from pylixir.envs.PylixirEnv import PylixirEnv
 
 
 def register_env() -> None:

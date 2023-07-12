@@ -15,7 +15,7 @@ class ObsOutofBoundsException(Exception):
     ...
 
 
-class ObservationSchema():
+class ObservationSchema:
     def __init__(self):
         self._discrete_space = []
         self._continuous_space = []
@@ -25,50 +25,49 @@ class ObservationSchema():
 
     def discrete_series(self, kwd, size, count):
         for idx in range(count):
-            self.discrete(f'{kwd}_{idx}', size)
+            self.discrete(f"{kwd}_{idx}", size)
 
     def continuous(self, kwd, size):
         self._continuous_space.append((kwd, size))
 
     def get_space(self):
-        return spaces.MultiDiscrete([
-            size for _, size in self._discrete_space
-        ])
+        return spaces.MultiDiscrete([size for _, size in self._discrete_space])
 
 
 def get_observation_schema():
     schema = ObservationSchema()
-    schema.discrete_series('committee', 18, 3)
-    schema.discrete('turn_left', 15)
-    schema.discrete('reroll', 10)
-    schema.discrete_series('board', 15, 5)
-    schema.discrete_series('enchant_lucky', 101, 5)
-    schema.discrete_series('enchant_prob', 101, 5)
+    schema.discrete_series("committee", 18, 3)
+    schema.discrete("turn_left", 15)
+    schema.discrete("reroll", 10)
+    schema.discrete_series("board", 15, 5)
+    schema.discrete_series("enchant_lucky", 101, 5)
+    schema.discrete_series("enchant_prob", 101, 5)
 
     for idx in range(3):
         prefix = f"suggestion_{idx}"
-        schema.discrete(f'{prefix}_applyImmediately', 2)
-        schema.discrete(f'{prefix}_applyLimit', 4)
-        schema.discrete(f'{prefix}_id', 295)
-        schema.discrete(f'{prefix}_logic_0_ratio', 5)
-        schema.discrete(f'{prefix}_logic_0_remainTurn', 3)
-        schema.discrete(f'{prefix}_logic_0_targetCondition', 8)
-        schema.discrete(f'{prefix}_logic_0_targetCount', 5)
-        schema.discrete(f'{prefix}_logic_0_targetType', 10)
-        schema.discrete(f'{prefix}_logic_0_type', 29)
-        schema.discrete(f'{prefix}_logic_1_ratio', 5)
-        schema.discrete(f'{prefix}_logic_1_remainTurn', 3)
-        schema.discrete(f'{prefix}_logic_1_targetCondition', 8)
-        schema.discrete(f'{prefix}_logic_1_targetCount', 5)
-        schema.discrete(f'{prefix}_logic_1_targetType', 10)
-        schema.discrete(f'{prefix}_logic_1_type', 29)
-        schema.discrete(f'{prefix}_pickupRatio', 56)
-        schema.discrete(f'{prefix}_range0', 9)
-        schema.discrete(f'{prefix}_range1', 9)
-        schema.discrete(f'{prefix}_slotType', 5)
-        schema.discrete(f'{prefix}_type', 8)
+        schema.discrete(f"{prefix}_applyImmediately", 2)
+        schema.discrete(f"{prefix}_applyLimit", 4)
+        schema.discrete(f"{prefix}_id", 295)
+        schema.discrete(f"{prefix}_logic_0_ratio", 5)
+        schema.discrete(f"{prefix}_logic_0_remainTurn", 3)
+        schema.discrete(f"{prefix}_logic_0_targetCondition", 8)
+        schema.discrete(f"{prefix}_logic_0_targetCount", 5)
+        schema.discrete(f"{prefix}_logic_0_targetType", 10)
+        schema.discrete(f"{prefix}_logic_0_type", 29)
+        schema.discrete(f"{prefix}_logic_1_ratio", 5)
+        schema.discrete(f"{prefix}_logic_1_remainTurn", 3)
+        schema.discrete(f"{prefix}_logic_1_targetCondition", 8)
+        schema.discrete(f"{prefix}_logic_1_targetCount", 5)
+        schema.discrete(f"{prefix}_logic_1_targetType", 10)
+        schema.discrete(f"{prefix}_logic_1_type", 29)
+        schema.discrete(f"{prefix}_pickupRatio", 56)
+        schema.discrete(f"{prefix}_range0", 9)
+        schema.discrete(f"{prefix}_range1", 9)
+        schema.discrete(f"{prefix}_slotType", 5)
+        schema.discrete(f"{prefix}_type", 8)
 
     return schema
+
 
 class PylixirEnv(gym.Env[Any, Any]):
     observation_space: spaces.MultiDiscrete
@@ -88,7 +87,7 @@ class PylixirEnv(gym.Env[Any, Any]):
         )
 
         # fmt: off
-        self.observation_space = get_observation_schema().get_space()      # fmt: on
+        self.observation_space = get_observation_schema().get_space()  # fmt: on
         self.action_space = spaces.Discrete(15 + 1)
 
     def _get_obs(self) -> np.typing.NDArray[np.int64]:
