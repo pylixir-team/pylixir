@@ -37,7 +37,11 @@ class EnchantCommand(pydantic.BaseModel):
         result = [0 for _ in range(self.size)]
 
         for _ in range(count):
+            if sum(masked_prob) == 0:  ## 2-enchant given, but only one available
+                break
+
             target_index = randomness.weighted_sampling(masked_prob)
+
             # add result as amount
             result[target_index] += amount
             if randomness.binomial(lucky_ratio[target_index]):

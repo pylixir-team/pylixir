@@ -8,7 +8,7 @@ isort = "isort pylixir tests"
 format = ["black", "isort"]
 lint = "pylint pylixir tests"
 coverage = "pytest --cov=pylixir"
-unittest = "pytest -vv -x tests/ --ignore tests/fetch/"
+unittest = "pytest -vv -x tests/"
 typetest = "mypy pylixir tests"
 
 cln = "rm -rf **/__pycache__ .coverage .mypy_cache .pytest_cache"

@@ -1,13 +1,12 @@
-import pickle
+import enum
 import random
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TypedDict, Union
 
 import gymnasium as gym
-import numpy as np
 from gymnasium import spaces
 
 from pylixir.data.council.target import UserSelector
-from pylixir.envs.observation import EmbeddingProvider
+from pylixir.envs.observation import DictObservation
 from pylixir.interface.cli import ClientBuilder
 
 
@@ -15,29 +14,68 @@ class ObsOutofBoundsException(Exception):
     ...
 
 
-class ObservationSchema:
+class ObservationType(enum.Enum):
+    discrete = "discrete"
+    continuous = "continuous"
+
+
+class ObservationChunk(TypedDict, total=False):
+    kwd: str
+    size: int
+    type: ObservationType
+    low: float
+    high: float
+
+
+class DictObservationSchema:
     def __init__(self) -> None:
-        self._discrete_space: list[tuple[str, int]] = []
+        self._space: list[ObservationChunk] = []
 
     def discrete(self, kwd: str, size: int) -> None:
-        self._discrete_space.append((kwd, size))
+        self._space.append({"kwd": kwd, "size": size, "type": ObservationType.discrete})
 
     def discrete_series(self, kwd: str, size: int, count: int) -> None:
         for idx in range(count):
             self.discrete(f"{kwd}_{idx}", size)
 
-    def get_space(self) -> spaces.MultiDiscrete:
-        return spaces.MultiDiscrete([size for _, size in self._discrete_space])
+    def continuous(self, kwd: str, size: int, low: float, high: float) -> None:
+        self._space.append(
+            {
+                "kwd": kwd,
+                "size": size,
+                "type": ObservationType.continuous,
+                "low": low,
+                "high": high,
+            }
+        )
+
+    def get_space(self) -> spaces.Dict:
+        obs: dict[str, spaces.Space[Any]] = {}
+
+        for space in self._space:
+            if space["type"] == ObservationType.discrete:
+                obs[space["kwd"]] = spaces.Discrete(space["size"])
+            elif space["type"] == ObservationType.continuous:
+                obs[space["kwd"]] = spaces.Box(
+                    space["low"],
+                    space["high"],
+                    (space["size"],),
+                )
+            else:
+                raise ValueError
+
+        return spaces.Dict(obs)
 
 
-def get_observation_schema() -> ObservationSchema:
-    schema = ObservationSchema()
+def get_observation_schema() -> DictObservationSchema:
+    schema = DictObservationSchema()
+    schema.continuous("enchant_lucky", 5, low=0.0, high=1.0)
+    schema.continuous("enchant_prob", 5, low=0.0, high=1.0)
+
     schema.discrete_series("committee", 18, 3)
     schema.discrete("turn_left", 15)
     schema.discrete("reroll", 10)
     schema.discrete_series("board", 15, 5)
-    schema.discrete_series("enchant_lucky", 101, 5)
-    schema.discrete_series("enchant_prob", 101, 5)
 
     for idx in range(3):
         prefix = f"suggestion_{idx}"
@@ -65,8 +103,8 @@ def get_observation_schema() -> ObservationSchema:
     return schema
 
 
-class PylixirEnv(gym.Env[Any, Any]):
-    observation_space: spaces.MultiDiscrete
+class DictPylixirEnv(gym.Env[Any, Any]):
+    observation_space: spaces.Dict
     action_space: spaces.Discrete
     metadata: Dict[str, Any] = {"render_modes": ["human"]}
 
@@ -78,7 +116,7 @@ class PylixirEnv(gym.Env[Any, Any]):
 
         self._completeness_threshold = completeness_threshold
         self._client = self._client_builder.get_client(0)
-        self._embedding_provider = EmbeddingProvider(
+        self._embedding_provider = DictObservation(
             self._client.get_council_pool_index_map()
         )
 
@@ -86,22 +124,8 @@ class PylixirEnv(gym.Env[Any, Any]):
         self.observation_space = get_observation_schema().get_space()  # fmt: on
         self.action_space = spaces.Discrete(15 + 1)
 
-    def _get_obs(self) -> np.typing.NDArray[np.int64]:
-        observation = np.array(
-            self._embedding_provider.create_observation(self._client)
-        )
-        validation = observation >= self.observation_space.nvec
-        if validation.any():
-            indices = validation.nonzero()[0]
-            idx = ", ".join(map(str, indices))
-            value = ", ".join(map(str, observation[indices]))
-
-            with open("client.pkl", "wb") as f:
-                pickle.dump(self, f)
-            raise ObsOutofBoundsException(
-                f"Observation encoding out of bounds: index {idx}, got {value}"
-            )
-        return observation
+    def _get_obs(self) -> dict[str, Union[int, list[float]]]:
+        return self._embedding_provider.create_observation(self._client)
 
     def _get_info(self) -> Dict[Any, Any]:
         total_reward = self._embedding_provider.current_total_reward(self._client)
@@ -122,7 +146,7 @@ class PylixirEnv(gym.Env[Any, Any]):
 
     def reset(
         self, seed: Optional[int] = None, options: Optional[dict[str, Any]] = None
-    ) -> tuple[np.typing.NDArray[np.int64], Dict[Any, Any]]:
+    ) -> tuple[Dict[Any, Any], Dict[Any, Any]]:
         if seed is None:
             seed = random.randint(0, 1 << 16)
         super().reset(seed=seed)
@@ -131,7 +155,7 @@ class PylixirEnv(gym.Env[Any, Any]):
 
     def step(
         self, action: int
-    ) -> tuple[np.typing.NDArray[np.int64], float, bool, bool, Dict[Any, Any]]:
+    ) -> tuple[Dict[Any, Any], float, bool, bool, Dict[Any, Any]]:
         previous_total_reward = self._embedding_provider.current_total_reward(
             self._client
         )

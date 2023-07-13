@@ -3,6 +3,7 @@ from stable_baselines3 import DQN
 
 from deep.stable_baselines.train import train
 from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
+from deep.stable_baselines.policy.council_feature import CustomCombinedExtractor
 
 
 class DQNModelSettings(ModelSettings):
@@ -21,8 +22,8 @@ train_envs.update(
 )
 
 model_envs: DQNModelSettings = {
-    "policy": "MlpPolicy",
-    "learning_rate": 0.0001,
+    "policy": "MultiInputPolicy",
+    "learning_rate": 0.0003,
     "seed": 37,
     "kwargs": {
         "batch_size": 32,
@@ -32,6 +33,10 @@ model_envs: DQNModelSettings = {
         "policy_kwargs": {"activation_fn": torch.nn.ReLU, "net_arch": [128, 128]},
         "tensorboard_log": "./logs/tb/",
         "verbose": 1,
+        "policy_kwargs": {
+            "features_extractor_class":CustomCombinedExtractor,
+            "features_extractor_kwargs":dict(),
+        }
     },
 }
 
