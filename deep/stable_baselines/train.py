@@ -1,5 +1,7 @@
 import os, time, random
 from typing import Type, Union
+import json
+
 
 import gymnasium as gym
 from stable_baselines3.common.base_class import BaseAlgorithm
@@ -87,6 +89,27 @@ class CustomCallback(BaseCallback):
         """
         pass
 
+def _serialize_config(nested_dict):
+    if isinstance(nested_dict, (int, str, float, bool)):
+        return nested_dict
+
+    if isinstance(nested_dict, list):
+        return [
+            _serialize_config(vv) for vv in nested_dict
+        ]
+
+    output = {}
+    for k, v in nested_dict.items():
+        if isinstance(v, (list, dict)):
+            output[k] = _serialize_config(v)
+        elif isinstance(v, (int, str, float, bool)):
+            output[k] = v
+        else:
+            output[k] = str(v)
+
+    return output
+
+
 def train(
     train_envs: TrainSettings, model_envs: ModelSettings, Model: Type[BaseAlgorithm]
 ) -> None:
@@ -124,8 +147,21 @@ def train(
     )
     model.set_random_seed(model_envs["seed"])
     checkpoint_callback = get_callback(
-        train_envs["checkpoint_freq"] // n_envs, train_envs["eval_freq"] // n_envs, f"./logs/checkpoints/{train_envs['name']}"
+        train_envs["checkpoint_freq"] // n_envs, train_envs["eval_freq"] // n_envs, f"./logs/checkpoints/{train_envs['name']}.{train_envs['expname']}"
     )
+    model_dirname = f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}"
+    try:
+        os.makedirs(model_dirname, exist_ok=False)
+    except Exception as e:
+        print("Given exp name already exist")
+        raise e
+
+    with open(os.path.join(model_dirname, "config.json"), "w") as f:
+        json.dump(_serialize_config({
+            "train": train_envs,
+            "model": model_envs
+        }), f, indent=2)
+
     print(model.policy)
     random.seed(model_envs["seed"])
     evaluate(
@@ -196,12 +232,15 @@ def evaluate_model(
     model: BaseAlgorithm, env: Union[gym.Env, VecEnv], threshold: int = 14, max_seed: int = 100000, render: bool = False
 ) -> tuple[float, float, float]:
     av_ep_lens, avg_rewards, success_rate = 0, 0, 0
+    neg_rew = 0
+    success_rate_14, success_rate_16, success_rate_18 = 0, 0, 0
     for seed in trange(max_seed):
         obs, _ = env.reset(seed=seed)
         if render:
             env.render()
         terminated = False
         curr_reward, curr_ep_len = 0, 0
+        ticks = 0
         while not terminated:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, terminated, _, info = env.step(action)
@@ -209,12 +248,28 @@ def evaluate_model(
                 env.render()
             curr_reward += reward
             curr_ep_len += 1
+            ticks += 1
+            if ticks > 20:
+                break
+
         av_ep_lens += curr_ep_len
         avg_rewards += curr_reward
-        if info["current_valuation"] >= threshold:
-            success_rate += 1
+        if ticks < 20:
+            if info["current_valuation"] >= threshold:
+                success_rate += 1
+            if info["current_valuation"] >= 14:
+                success_rate_14 += 1
+            if info["current_valuation"] >= 16:
+                success_rate_16 += 1
+            if info["current_valuation"] >= 18:
+                success_rate_18 += 1
+        else:
+            neg_rew += 1
+
+    print(f"Wrong choice: {neg_rew}")
+
     return tuple(
-        map(lambda x: float(x / max_seed), (av_ep_lens, avg_rewards, success_rate))
+        map(lambda x: float(x / max_seed), (av_ep_lens, avg_rewards, success_rate, success_rate_14, success_rate_16, success_rate_18))
     )
 
 def evaluate(

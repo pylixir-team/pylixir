@@ -171,8 +171,11 @@ class DictPylixirEnv(gym.Env[Any, Any]):
         )
         info = self._get_info()
 
+        if reward < 0:
+            reward = reward / 3
+
         if not ok:
-            reward = -1
+            reward = -3
             # observation, reward, terminated, truncated, info
             return state, reward, False, False, info
 

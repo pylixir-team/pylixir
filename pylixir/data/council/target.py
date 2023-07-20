@@ -57,10 +57,13 @@ class MinValueSelector(TargetSelector):
         if self.target_condition != 0:
             raise InvalidSelectionException("Invalid proposed selector")
 
+        if len(state.board.mutable_indices()) == 0:
+            return state.board.unlocked_indices()[: self.count]
+
         return choose_min_indices(state.board, randomness, count=self.count)
 
     def is_valid(self, state: GameState) -> bool:
-        return True
+        return len(state.board.mutable_indices()) > 0
 
 
 class MaxValueSelector(TargetSelector):
@@ -70,10 +73,13 @@ class MaxValueSelector(TargetSelector):
         if self.target_condition != 0:
             raise InvalidSelectionException("Invalid proposed selector")
 
+        if len(state.board.mutable_indices()) == 0:
+            return state.board.unlocked_indices()[: self.count]
+
         return choose_max_indices(state.board, randomness, count=self.count)
 
     def is_valid(self, state: GameState) -> bool:
-        return True
+        return len(state.board.mutable_indices()) > 0
 
 
 class UserSelector(TargetSelector):
