@@ -107,7 +107,7 @@ class EmbeddingProvider:
         if 1 not in alived_indices:
             second = 0
 
-        return 2 ** first + 2 ** second
+        return float(2**first + 2**second)
 
     def current_valuation(
         self, client: Client, index: tuple[int, int] = (0, 1)
