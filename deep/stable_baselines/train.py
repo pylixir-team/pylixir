@@ -111,12 +111,12 @@ def _serialize_config(nested_dict):
 
 
 def train(
-    train_envs: TrainSettings, model_envs: ModelSettings, Model: Type[BaseAlgorithm]
+    train_envs: TrainSettings, model_envs: ModelSettings, Model: Type[BaseAlgorithm], continue_from: str = "",
 ) -> None:
     n_envs = train_envs["n_envs"]
     # Env Control
     register_env()
-    env = make_vec_env("pylixir/DictPylixirEnv-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs)
+    env = make_vec_env("pylixir/DictPylixirEnv-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs, seed=0)
     # env = PylixirEnv()
     # env.reset(0)
     action_dim = env.action_space.n
@@ -141,17 +141,22 @@ def train(
     print("model envs:")
     print(*(model_envs["kwargs"].items()), sep="\n")
 
-    # Create Model
-    model = Model(
-        model_envs["policy"], env, model_envs["learning_rate"], seed=model_envs["seed"], **model_envs["kwargs"]
-    )
-    model.set_random_seed(model_envs["seed"])
+    if continue_from:
+        model = Model.load(continue_from)
+        model.set_env(env)
+    else:
+        # Create Model
+        model = Model(
+            model_envs["policy"], env, model_envs["learning_rate"], seed=model_envs["seed"], **model_envs["kwargs"]
+        )
+        model.set_random_seed(model_envs["seed"])
+
     checkpoint_callback = get_callback(
         train_envs["checkpoint_freq"] // n_envs, train_envs["eval_freq"] // n_envs, f"./logs/checkpoints/{train_envs['name']}.{train_envs['expname']}"
     )
     model_dirname = f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}"
     try:
-        os.makedirs(model_dirname, exist_ok=False)
+        os.makedirs(model_dirname, exist_ok=True)
     except Exception as e:
         print("Given exp name already exist")
         raise e
@@ -174,6 +179,7 @@ def train(
         callback=checkpoint_callback,
         progress_bar=True,
         log_interval=train_envs["log_interval"],
+        reset_num_timesteps=(continue_from == ""),
     )
     # Save Model
     model_path = f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}/latest.zip"
