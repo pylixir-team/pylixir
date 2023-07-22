@@ -1,17 +1,22 @@
-from stable_baselines3 import DQN
+from stable_baselines3 import DQN, PPO
 
 from deep.stable_baselines.train import evaluate_model
-from pylixir.envs.PylixirEnv import PylixirEnv
+from pylixir.envs.DictPylixirEnv import DictPylixirEnv
 
-model = DQN.load("./logs/checkpoints/DQN/rl_model_1000000_steps.zip")
-env = PylixirEnv()
-av_ep_lens, avg_rewards, success_rate = evaluate_model(model, env, max_seed=10000, threshold=14, render=False)
+model = DQN.load("./logs/checkpoints/DQN.exp-neg-decay-b128-emb/rl_model_1500000_steps.zip")
+#model = PPO.load("./logs/checkpoints/PPO.init-3e-4/rl_model_1500000_steps.zip")
+env = DictPylixirEnv()
+av_ep_lens, avg_rewards, success_rate, r_14, r_16, r_18 = evaluate_model(model, env, max_seed=10000, threshold=14, render=False)
 print(
     "--------------------------------------------------------------------------------------------"
 )
 print("average episode length : ", av_ep_lens)
 print("mean of average reward of each episode : ", avg_rewards)
 print("success rate (%) : ", success_rate * 100)
+print("success rate[14] (%) : ", r_14 * 100)
+print("success rate[16] (%) : ", r_16 * 100)
+print("success rate[18] (%) : ", r_18 * 100)
+
 print(
     "--------------------------------------------------------------------------------------------"
 )
