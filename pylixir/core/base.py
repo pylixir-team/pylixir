@@ -42,6 +42,9 @@ class Randomness(metaclass=abc.ABCMeta):
             valid_indices = [
                 idx for idx in range(len(basis)) if result[idx] < max_count
             ]
+            if len(valid_indices) == 0:
+                return result
+
             target_index = self.pick(valid_indices)
             result[target_index] += 1
 
