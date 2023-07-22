@@ -111,7 +111,7 @@ def _serialize_config(nested_dict):
 
 
 def train(
-    train_envs: TrainSettings, model_envs: ModelSettings, Model: Type[BaseAlgorithm]
+    train_envs: TrainSettings, model_envs: ModelSettings, Model: Type[BaseAlgorithm], continue_from: str = "",
 ) -> None:
     n_envs = train_envs["n_envs"]
     # Env Control
@@ -141,11 +141,16 @@ def train(
     print("model envs:")
     print(*(model_envs["kwargs"].items()), sep="\n")
 
-    # Create Model
-    model = Model(
-        model_envs["policy"], env, model_envs["learning_rate"], seed=model_envs["seed"], **model_envs["kwargs"]
-    )
-    model.set_random_seed(model_envs["seed"])
+    if continue_from:
+        model = Model.load(continue_from)
+        model.set_env(env)
+    else:
+        # Create Model
+        model = Model(
+            model_envs["policy"], env, model_envs["learning_rate"], seed=model_envs["seed"], **model_envs["kwargs"]
+        )
+        model.set_random_seed(model_envs["seed"])
+
     checkpoint_callback = get_callback(
         train_envs["checkpoint_freq"] // n_envs, train_envs["eval_freq"] // n_envs, f"./logs/checkpoints/{train_envs['name']}.{train_envs['expname']}"
     )

@@ -2,6 +2,7 @@ import gymnasium as gym
 import torch as th
 from torch import nn
 from gymnasium import spaces
+import math
 
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
@@ -36,6 +37,29 @@ def get_major_key(full_key: str) -> str:
 
     return main_key
 
+class PositionalEncoding(nn.Module):
+    def __init__(self, dim_model, dropout_p, max_len):
+        super().__init__()
+        
+        self.dropout = nn.Dropout(dropout_p)
+ 
+        # Encoding - From formula
+        pos_encoding = th.zeros(max_len, dim_model)
+        positions_list = th.arange(0, max_len, dtype=th.float).view(-1, 1) # 0, 1, 2, 3, 4, 5
+        division_term = th.exp(th.arange(0, dim_model, 2).float() * (-math.log(10000.0)) / dim_model) # 1000^(2i/dim_model)
+ 
+        pos_encoding[:, 0::2] = th.sin(positions_list * division_term)
+        pos_encoding[:, 1::2] = th.cos(positions_list * division_term)
+ 
+        # Saving buffer (same as parameter without gradients needed)
+        pos_encoding = pos_encoding
+        self.register_buffer("pos_encoding", pos_encoding)
+ 
+    def forward(self, token_embedding: th.tensor) -> th.tensor:
+        # Residual connection + pos encoding
+        return self.dropout(token_embedding + self.pos_encoding)
+
+
 class CustomCombinedExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: spaces.Dict):
         # We do not know features-dim here before going over all the items,
@@ -45,12 +69,13 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
 
         extractors = {}
 
-        total_concat_size = 0
-
         FLOATING_EMBEDDING_SIZE = 16
         SUGGESION_EMBEDDING_SIZE = 16
         
-        COLLECTION_EMBEDDING_SIZE = 256
+        COLLECTION_EMBEDDING_SIZE = 128
+
+        ATTN_LAYER_COUNT = 3
+        ATTN_HEAD_COUNT = 8
 
         board_embedding_size = 0
         council_embedding_size = 0
@@ -60,14 +85,20 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         for key, subspace in observation_space.spaces.items():
             if key in extractors:
                 continue
-            elif isinstance(subspace, spaces.Box):
+            elif isinstance(subspace, spaces.Box):                    
                 extractors[key] = nn.Sequential(
                     nn.Flatten(),
                     FloatExpansion(FLOATING_EMBEDDING_SIZE),
                 )
-                total_concat_size += FLOATING_EMBEDDING_SIZE * subspace.shape[0]
                 board_embedding_size += FLOATING_EMBEDDING_SIZE
             elif isinstance(subspace, spaces.Discrete):
+                if key in ("turn_left", "reroll"):
+                    extractors[key] = nn.Sequential(
+                        nn.Flatten(),
+                        nn.Linear(subspace.n, COLLECTION_EMBEDDING_SIZE)
+                    )
+                    continue
+
                 main_key = get_major_key(key)
                 if main_key not in extractors:
                     extractors[main_key] = nn.Sequential(
@@ -78,7 +109,6 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
                         council_embedding_size += SUGGESION_EMBEDDING_SIZE
 
                 extractors[key] = extractors[main_key]
-                total_concat_size += SUGGESION_EMBEDDING_SIZE
             else:
                 raise ValueError
 
@@ -88,9 +118,13 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         self.council_collector = nn.Linear(council_embedding_size, COLLECTION_EMBEDDING_SIZE)
         self.board_collector = nn.Linear(board_embedding_size, COLLECTION_EMBEDDING_SIZE)
 
+        self.pe = PositionalEncoding(COLLECTION_EMBEDDING_SIZE, 0.0, 10)
+        self.mha = nn.ModuleList(
+            [nn.TransformerEncoderLayer(COLLECTION_EMBEDDING_SIZE, ATTN_HEAD_COUNT, dim_feedforward=COLLECTION_EMBEDDING_SIZE * 2, batch_first=True) for _ in range(ATTN_LAYER_COUNT)]
+        ) 
+
         # Update the features dim manually
-        # self._features_dim = total_concat_size
-        self._features_dim = COLLECTION_EMBEDDING_SIZE * (3 + 5) + SUGGESION_EMBEDDING_SIZE * 2
+        self._features_dim = COLLECTION_EMBEDDING_SIZE * (3 + 5 + 2)
 
     def forward(self, observations) -> th.Tensor:
         encoded_tensor_map = {}
@@ -126,5 +160,10 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         encoded_tensor_list.append(encoded_tensor_map["turn_left"])
         encoded_tensor_list.append(encoded_tensor_map["reroll"])
 
-        # Return a (B, self._features_dim) PyTorch tensor, where B is batch dimension.
-        return th.cat(encoded_tensor_list, dim=1)
+        v = th.stack(encoded_tensor_list, dim=1)
+        v = self.pe(v)
+
+        for attn in self.mha:
+            v = attn(v)
+
+        return v
