@@ -15,7 +15,7 @@ class DQNModelSettings(ModelSettings):
 train_envs = get_basic_train_settings(name="DQN")
 train_envs.update(
     {
-        "expname": "transformer-L3-H8-Emb128-lrdecay3e-4",
+        "expname": "transformer-L1-H8-Emb128-lrdecay3e-4",
         "total_timesteps": int(20e5),
         "checkpoint_freq": int(10e4),
         "eval_freq": int(10e4),
@@ -56,8 +56,10 @@ model_envs: DQNModelSettings = {
         "tensorboard_log": "./logs/tb/",
         "verbose": 1,
         "policy_kwargs": {
-            "activation_fn": torch.nn.ReLU,
-            "net_arch": [128, 128],
+            "transformer_layers": 6,
+            "vector_size": 128,
+            "hidden_dimension": 128,
+            "transformer_heads": 8,
             "features_extractor_class":CustomCombinedExtractor,
             "features_extractor_kwargs": {
                 "prob_hidden_dim": 16,
