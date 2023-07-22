@@ -10,11 +10,55 @@ from stable_baselines3.common.torch_layers import (
 )
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.dqn.policies import DQNPolicy
+import math
 
 
-class DiscreteAction(nn.Module):
-    def __init__(self, vector_size: int = 128, hidden_dimension: int = 64):
-        super(DiscreteAction, self).__init__()
+class PositionalEncoding(nn.Module):
+    def __init__(self, dim_model, dropout_p, max_len):
+        super().__init__()
+        
+        self.dropout = nn.Dropout(dropout_p)
+ 
+        # Encoding - From formula
+        pos_encoding = th.zeros(max_len, dim_model)
+        positions_list = th.arange(0, max_len, dtype=th.float).view(-1, 1) # 0, 1, 2, 3, 4, 5
+        division_term = th.exp(th.arange(0, dim_model, 2).float() * (-math.log(10000.0)) / dim_model) # 1000^(2i/dim_model)
+ 
+        pos_encoding[:, 0::2] = th.sin(positions_list * division_term)
+        pos_encoding[:, 1::2] = th.cos(positions_list * division_term)
+ 
+        # Saving buffer (same as parameter without gradients needed)
+        pos_encoding = pos_encoding
+        self.register_buffer("pos_encoding", pos_encoding)
+ 
+    def forward(self, token_embedding: th.tensor) -> th.tensor:
+        # Residual connection + pos encoding
+        return self.dropout(token_embedding + self.pos_encoding)
+
+
+class TransformerDecisionNet(nn.Module):
+    def __init__(self, 
+            vector_size: int = 128, 
+            hidden_dimension: int = 64,
+            transformer_layers: int = 3,
+            transformer_heads: int = 8,
+        ):
+
+        super(TransformerDecisionNet, self).__init__()
+
+        self._transformer_layers = transformer_layers
+        self._transformer_heads = transformer_heads
+
+        self.pe = PositionalEncoding(vector_size, 0.0, 10)
+        self.mha = nn.ModuleList(
+            [nn.TransformerEncoderLayer(
+                vector_size,
+                self._transformer_heads,
+                dim_feedforward=vector_size * 2,
+                batch_first=True
+            ) for _ in range(self._transformer_layers)]
+        ) 
+
         self.nn = nn.Sequential(
             nn.Linear(vector_size * (1 + 1 + 2), hidden_dimension),
             nn.ReLU(),
@@ -27,6 +71,11 @@ class DiscreteAction(nn.Module):
         )
 
     def forward(self, x):
+        x = self.pe(x)
+
+        for attn in self.mha:
+            x = attn(x)
+
         boards = x[:, :5, :] # [B, 5, N]
         councils = x[:, 5:8, :] # [B, 3, N]
         ctxs = x[:, 8:, :] # [B, 2, N]
@@ -55,7 +104,7 @@ class DiscreteAction(nn.Module):
         return action
 
 
-class IndependentQNetwork(BasePolicy):
+class TransformerQNetwork(BasePolicy):
     """
     Action-Value (Q-Value) network for DQN
 
@@ -74,10 +123,11 @@ class IndependentQNetwork(BasePolicy):
         observation_space: spaces.Space,
         action_space: spaces.Discrete,
         features_extractor: BaseFeaturesExtractor,
-        features_dim: int,
-        net_arch: Optional[List[int]] = None,
-        activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
+        vector_size: int = 128, 
+        hidden_dimension: int = 64,
+        transformer_layers: int = 3,
+        transformer_heads: int = 8,
     ) -> None:
         super().__init__(
             observation_space,
@@ -86,45 +136,36 @@ class IndependentQNetwork(BasePolicy):
             normalize_images=normalize_images,
         )
 
-        if net_arch is None:
-            net_arch = [64, 64]
 
-        self.net_arch = net_arch
-        self.activation_fn = activation_fn
-        self.features_dim = features_dim
-        self.q_net = DiscreteAction()
+        self.vector_size = vector_size
+        self.hidden_dimension = hidden_dimension
+        self.transformer_layers = transformer_layers
+        self.transformer_heads = transformer_heads
 
-    def forward(self, obs: th.Tensor) -> th.Tensor:
-        """
-        Predict the q-values.
-
-        :param obs: Observation
-        :return: The estimated Q-Value for each action.
-        """
-        return self.q_net(self.extract_features(obs, self.features_extractor))
-
-    def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
-        q_values = self(observation)
-        # Greedy action
-        action = q_values.argmax(dim=1).reshape(-1)
-        return action
+        self.q_net = TransformerDecisionNet(
+            vector_size=vector_size,
+            hidden_dimension=hidden_dimension,
+            transformer_layers=transformer_layers,
+            transformer_heads=transformer_heads,
+        )
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()
 
         data.update(
             dict(
-                net_arch=self.net_arch,
-                features_dim=self.features_dim,
-                activation_fn=self.activation_fn,
+                vector_size=self.vector_size,
+                hidden_dimension=self.hidden_dimension,
+                transformer_layers=self.transformer_layers,
+                transformer_heads=self.transformer_heads,
                 features_extractor=self.features_extractor,
             )
         )
         return data
 
 
-class IndependentQPolicy(DQNPolicy):
-    def make_q_net(self) -> IndependentQNetwork:
+class TransformerQPolicy(DQNPolicy):
+    def make_q_net(self) -> TransformerQNetwork:
         # Make sure we always have separate networks for features extractors etc
         net_args = self._update_features_extractor(self.net_args, features_extractor=None)
-        return IndependentQNetwork(**net_args).to(self.device)
+        return TransformerQNetwork(**net_args).to(self.device)

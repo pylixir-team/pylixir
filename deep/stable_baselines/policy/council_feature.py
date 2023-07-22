@@ -37,28 +37,6 @@ def get_major_key(full_key: str) -> str:
 
     return main_key
 
-class PositionalEncoding(nn.Module):
-    def __init__(self, dim_model, dropout_p, max_len):
-        super().__init__()
-        
-        self.dropout = nn.Dropout(dropout_p)
- 
-        # Encoding - From formula
-        pos_encoding = th.zeros(max_len, dim_model)
-        positions_list = th.arange(0, max_len, dtype=th.float).view(-1, 1) # 0, 1, 2, 3, 4, 5
-        division_term = th.exp(th.arange(0, dim_model, 2).float() * (-math.log(10000.0)) / dim_model) # 1000^(2i/dim_model)
- 
-        pos_encoding[:, 0::2] = th.sin(positions_list * division_term)
-        pos_encoding[:, 1::2] = th.cos(positions_list * division_term)
- 
-        # Saving buffer (same as parameter without gradients needed)
-        pos_encoding = pos_encoding
-        self.register_buffer("pos_encoding", pos_encoding)
- 
-    def forward(self, token_embedding: th.tensor) -> th.tensor:
-        # Residual connection + pos encoding
-        return self.dropout(token_embedding + self.pos_encoding)
-
 
 class CustomCombinedExtractor(BaseFeaturesExtractor):
     def __init__(self, 
@@ -78,9 +56,6 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         self._suggesion_feature_hidden_dim = suggesion_feature_hidden_dim
         self._embedding_dim = embedding_dim
         self._flatten_output = flatten_output
-
-        ATTN_LAYER_COUNT = 3
-        ATTN_HEAD_COUNT = 8
 
         board_embedding_size = 0
         council_embedding_size = 0
@@ -123,11 +98,6 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         self.council_collector = nn.Linear(council_embedding_size, embedding_dim)
         self.board_collector = nn.Linear(board_embedding_size, embedding_dim)
 
-        self.pe = PositionalEncoding(embedding_dim, 0.0, 10)
-        self.mha = nn.ModuleList(
-            [nn.TransformerEncoderLayer(embedding_dim, ATTN_HEAD_COUNT, dim_feedforward=embedding_dim * 2, batch_first=True) for _ in range(ATTN_LAYER_COUNT)]
-        ) 
-
         # Update the features dim manually
         self._features_dim = embedding_dim * (3 + 5 + 2)
 
@@ -166,10 +136,6 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         encoded_tensor_list.append(encoded_tensor_map["reroll"])
 
         v = th.stack(encoded_tensor_list, dim=1)
-        v = self.pe(v)
-
-        for attn in self.mha:
-            v = attn(v)
 
         if self._flatten_output:
             return th.flatten(v, start_dim=1)
