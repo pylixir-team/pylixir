@@ -5,7 +5,7 @@ from stable_baselines3 import DQN
 from deep.stable_baselines.train import train
 from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
 from deep.stable_baselines.policy.council_feature import CustomCombinedExtractor
-from deep.stable_baselines.policy.network import IndependentQPolicy
+from deep.stable_baselines.policy.transformer_network import TransformerQPolicy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 
 class DQNModelSettings(ModelSettings):
@@ -45,7 +45,7 @@ class LearningRateDecay():
 
 
 model_envs: DQNModelSettings = {
-    "policy": IndependentQPolicy,
+    "policy": TransformerQPolicy,
     "learning_rate": LearningRateDecay(3e-4, 3e-5),
     "seed": 37,
     "kwargs": {
@@ -59,7 +59,12 @@ model_envs: DQNModelSettings = {
             "activation_fn": torch.nn.ReLU,
             "net_arch": [128, 128],
             "features_extractor_class":CustomCombinedExtractor,
-            "features_extractor_kwargs":dict(),
+            "features_extractor_kwargs": {
+                "prob_hidden_dim": 16,
+                "suggesion_feature_hidden_dim": 16,
+                "embedding_dim": 128,
+                "flatten_output": False
+            },
         },
         "tensorboard_log": "./logs/tb/",
         "verbose": 1,
