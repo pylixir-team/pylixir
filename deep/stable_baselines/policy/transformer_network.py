@@ -147,6 +147,91 @@ class TransformerDecisionNet(nn.Module):
         return action
 
 
+class EncDecDecisionNet(nn.Module):
+    def __init__(self, 
+            vector_size: int = 128, 
+            hidden_dimension: int = 64,
+            transformer_layers: int = 3,
+            transformer_heads: int = 8,
+        ):
+
+        super(EncDecDecisionNet, self).__init__()
+
+        self._transformer_layers = transformer_layers
+        self._transformer_heads = transformer_heads
+
+        self.pe = PositionalEncoding(vector_size, 0.0, 10)
+        self.board_encoder = nn.ModuleList(
+            [nn.TransformerEncoderLayer(
+                vector_size,
+                self._transformer_heads,
+                dim_feedforward=vector_size * 2,
+                batch_first=True
+            ) for _ in range(self._transformer_layers)]
+        ) 
+        self.council_decoder = nn.ModuleList(
+            [nn.TransformerDecoderLayer(
+                vector_size,
+                self._transformer_heads,
+                dim_feedforward=vector_size * 2,
+                batch_first=True
+            ) for _ in range(self._transformer_layers)]
+        ) 
+
+        self.nn = nn.Sequential(
+            nn.Linear(vector_size * (1 + 1 + 2), hidden_dimension),
+            nn.ReLU(),
+            nn.Linear(hidden_dimension, 1),
+        )
+        self.reroll = nn.Sequential(
+            nn.Linear(vector_size * 10, hidden_dimension),
+            nn.ReLU(),
+            nn.Linear(hidden_dimension, 1),
+        )
+
+    def forward(self, x):
+        x = self.pe(x)
+
+        boards = x[:, :5, :] # [B, 5, N]
+        councils = x[:, 5:8, :] # [B, 3, N]
+        ctxs = x[:, 8:, :] # [B, 2, N]
+
+        extended_board = th.cat([boards, ctxs], dim=1)
+
+        for encoder in self.board_encoder:
+            extended_board = encoder(extended_board)
+
+        for decoder in self.council_decoder:
+            councils = decoder(councils, extended_board)
+
+        boards = extended_board[:, :5, :]
+        councils = x[:, 5:8, :] # [B, 3, N]
+        ctxs = extended_board[:, 5:, :] # [B, 2, N]
+
+        ctxs = th.flatten(ctxs, 1)
+        ctxs = th.stack([ctxs, ctxs, ctxs], dim=1)
+        ctxs = th.stack([ctxs, ctxs, ctxs, ctxs, ctxs], dim=1)
+
+        boards = th.stack(
+            [boards, boards, boards], dim=2
+        )
+        councils = th.stack(
+            [councils, councils, councils, councils, councils], dim=1
+        )
+
+        action_space_vector = th.cat([boards, councils], dim=-1)
+        action_space_vector = th.cat([action_space_vector, ctxs], dim=-1)
+        output = self.nn(action_space_vector)
+
+        output = th.flatten(th.squeeze(output, dim=1), start_dim=1)
+
+        # Reroll defining network
+        reroll = self.reroll(th.flatten(x, start_dim=1))
+        action = th.cat([output, reroll], dim=1)
+
+        return action
+
+
 class TransformerQNetwork(BasePolicy):
     """
     Action-Value (Q-Value) network for DQN
@@ -182,7 +267,7 @@ class TransformerQNetwork(BasePolicy):
         self.transformer_layers = transformer_layers
         self.transformer_heads = transformer_heads
 
-        self.q_net = TransformerDecisionNet(
+        self.q_net = EncDecDecisionNet(
             vector_size=vector_size,
             hidden_dimension=hidden_dimension,
             transformer_layers=transformer_layers,
