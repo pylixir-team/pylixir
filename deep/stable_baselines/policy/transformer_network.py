@@ -36,6 +36,48 @@ class PositionalEncoding(nn.Module):
         # Residual connection + pos encoding
         return self.dropout(token_embedding + self.pos_encoding)
 
+# L=6, learning rate가 너무 강한듯?
+
+class SimpleTransformerDecisionNet(nn.Module):
+    def __init__(self, 
+            vector_size: int = 128, 
+            hidden_dimension: int = 64,
+            transformer_layers: int = 3,
+            transformer_heads: int = 8,
+        ):
+
+        super(SimpleTransformerDecisionNet, self).__init__()
+
+        self._transformer_layers = transformer_layers
+        self._transformer_heads = transformer_heads
+
+        self.pe = PositionalEncoding(vector_size, 0.0, 10)
+        self.mha = nn.ModuleList(
+            [nn.TransformerEncoderLayer(
+                vector_size,
+                self._transformer_heads,
+                dim_feedforward=vector_size * 2,
+                batch_first=True
+            ) for _ in range(self._transformer_layers)]
+        ) 
+
+        self.action_network = nn.Sequential(
+            nn.Linear(vector_size * 10, 128),
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, 16),
+        )
+
+    def forward(self, x):
+        x = self.pe(x)
+
+        for attn in self.mha:
+            x = attn(x)
+
+        action = self.action_network(th.flatten(x, 1))
+        return action
+
 
 class TransformerDecisionNet(nn.Module):
     def __init__(self, 
