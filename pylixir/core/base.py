@@ -165,7 +165,7 @@ class Enchanter(pydantic.BaseModel):
         pick_ratios = [(0 if (idx in locked) else distributed_prob) for idx in range(5)]
 
         for mutation in self._mutations:
-            if mutation.target != MutationTarget.prob:
+            if mutation.target != MutationTarget.prob or mutation.index in locked:
                 continue
 
             target_prob = pick_ratios[mutation.index]
