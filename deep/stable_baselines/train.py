@@ -1,6 +1,7 @@
 import os, time, random
 from typing import Type, Union
 import json
+from pathlib import Path
 
 
 import gymnasium as gym
@@ -14,7 +15,6 @@ from tqdm import trange
 
 from deep.stable_baselines.util import ModelSettings, TrainSettings
 from pylixir.envs import register_env
-from pylixir.envs.DictPylixirEnv import DictPylixirEnv
 
 ENV_NAME = "DictPylixirEnv"
 
@@ -116,7 +116,7 @@ def train(
     n_envs = train_envs["n_envs"]
     # Env Control
     register_env()
-    env = make_vec_env("pylixir/DictPylixirEnv-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs)
+    env = make_vec_env(f"pylixir/{ENV_NAME}-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs)
     # env = PylixirEnv()
     # env.reset(0)
     action_dim = env.action_space.n
@@ -151,7 +151,7 @@ def train(
     )
     model_dirname = f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}"
     try:
-        os.makedirs(model_dirname, exist_ok=False)
+        Path(model_dirname).mkdir(parents=True, exist_ok=False)
     except Exception as e:
         print("Given exp name already exist")
         raise e
@@ -174,6 +174,7 @@ def train(
         callback=checkpoint_callback,
         progress_bar=True,
         log_interval=train_envs["log_interval"],
+        tb_log_name=f"{train_envs['name']}.{train_envs['expname']}",
     )
     # Save Model
     model_path = f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}/latest.zip"
@@ -299,4 +300,4 @@ def evaluate(
     print(f"Average enchant count: {average_enchant_count / max_seed}")
     print(f"Time taken: {time.time() - now}")
     print(f"max_seed: {max_seed}")
-    return mean / max_seed, std / max_seed, success_rate_14
+    return mean, std, success_rate_14 / max_seed
