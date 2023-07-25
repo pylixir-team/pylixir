@@ -84,7 +84,7 @@ class Effect(pydantic.BaseModel, metaclass=abc.ABCMeta):
         return not self.locked and self.value < self.max_value
 
 
-MAX_EFFECT_COUNT = 11
+MAX_EFFECT_COUNT = 10
 
 
 class Board(pydantic.BaseModel):
