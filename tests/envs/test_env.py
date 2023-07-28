@@ -8,5 +8,5 @@ def test_pylixir_env() -> None:
     env = gym.make("pylixir/PylixirEnv-v0")
     observation, info = env.reset(seed=0)
     observation, reward, terminated, truncated, info = env.step(4)
-    assert observation.shape == (80,)
+    assert observation.shape == (512,)
     # env.close()
