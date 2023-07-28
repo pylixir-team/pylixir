@@ -4,6 +4,9 @@ from typing import Any, Dict, Optional
 
 import gymnasium as gym
 import numpy as np
+import open_clip
+import openai
+import torch
 from gymnasium import spaces
 
 from pylixir.data.council.target import UserSelector
@@ -65,6 +68,32 @@ def get_observation_schema() -> ObservationSchema:
     return schema
 
 
+def get_embedding_openai(text_to_embed):
+    # Embed a line of text
+    response = openai.Embedding.create(
+        model="text-embedding-ada-002", input=[text_to_embed]
+    )
+    # Extract the AI output embedding as a list of floats
+    embedding = response["data"][0]["embedding"]
+
+    return embedding
+
+
+class OpenClipEmbeddingProvider:
+    def __init__(self):
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms(
+            "ViT-B-32", pretrained="laion2b_s34b_b79k", device="cuda"
+        )
+        self.tokenizer = open_clip.get_tokenizer("ViT-B-32")
+
+    def get_embedding(self, text_to_embed):
+        text = self.tokenizer([text_to_embed]).cuda()
+        with torch.no_grad(), torch.cuda.amp.autocast():
+            text_features = self.model.encode_text(text)
+            text_features /= text_features.norm(dim=-1, keepdim=True)
+        return text_features[0].detach().cpu().numpy()
+
+
 class PylixirEnv(gym.Env[Any, Any]):
     observation_space: spaces.MultiDiscrete
     action_space: spaces.Discrete
@@ -82,25 +111,33 @@ class PylixirEnv(gym.Env[Any, Any]):
             self._client.get_council_pool_index_map()
         )
 
-        # fmt: off
-        self.observation_space = get_observation_schema().get_space()  # fmt: on
-        self.action_space = spaces.Discrete(15 + 1)
-
-    def _get_obs(self) -> np.typing.NDArray[np.int64]:
-        observation = np.array(
-            self._embedding_provider.create_observation(self._client)
+        # self.observation_space = get_observation_schema().get_space()  # fmt: skip
+        self.observation_space = spaces.Box(
+            low=-1, high=1, shape=(512,), dtype=np.float16
         )
-        validation = observation >= self.observation_space.nvec
-        if validation.any():
-            indices = validation.nonzero()[0]
-            idx = ", ".join(map(str, indices))
-            value = ", ".join(map(str, observation[indices]))
+        self.action_space = spaces.Discrete(15 + 1)
+        self.model = OpenClipEmbeddingProvider()
 
-            with open("client.pkl", "wb") as f:
-                pickle.dump(self, f)
-            raise ObsOutofBoundsException(
-                f"Observation encoding out of bounds: index {idx}, got {value}"
-            )
+    def _get_obs(self) -> np.typing.NDArray[np.float16]:
+        txt = self._client.view()
+        observation = self.model.get_embedding(txt)
+        # embeddings = self.model(**self.tokenizer(txt, return_tensors="pt")).logits
+        # observation = np.array(get_embedding(txt), dtype=np.float64)
+        # ====================================
+        # observation = np.array(
+        #     self._embedding_provider.create_observation(self._client)
+        # )
+        # validation = observation >= self.observation_space.nvec
+        # if validation.any():
+        #     indices = validation.nonzero()[0]
+        #     idx = ", ".join(map(str, indices))
+        #     value = ", ".join(map(str, observation[indices]))
+
+        #     with open("client.pkl", "wb") as f:
+        #         pickle.dump(self, f)
+        #     raise ObsOutofBoundsException(
+        #         f"Observation encoding out of bounds: index {idx}, got {value}"
+        #     )
         return observation
 
     def _get_info(self) -> Dict[Any, Any]:
@@ -180,4 +217,4 @@ class PylixirEnv(gym.Env[Any, Any]):
                 ):
                     continue
                 actions += [effect_index * 3 + sage_index]
-        return actions
+        return actions + [15]
