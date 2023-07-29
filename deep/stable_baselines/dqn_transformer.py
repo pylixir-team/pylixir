@@ -15,8 +15,8 @@ class DQNModelSettings(ModelSettings):
 train_envs = get_basic_train_settings(name="DQN")
 train_envs.update(
     {
-        "expname": "transformer-L1-H8-Emb128-lrdecay3e-4",
-        "total_timesteps": int(20e5),
+        "expname": "transformer-L3-H4-Emb128-lrdecay3e-4-CONT-high-reward",
+        "total_timesteps": int(40e5),
         "checkpoint_freq": int(10e4),
         "eval_freq": int(10e4),
         "n_envs": 4
@@ -56,10 +56,10 @@ model_envs: DQNModelSettings = {
         "tensorboard_log": "./logs/tb/",
         "verbose": 1,
         "policy_kwargs": {
-            "transformer_layers": 6,
+            "transformer_layers": 3,
             "vector_size": 128,
             "hidden_dimension": 128,
-            "transformer_heads": 8,
+            "transformer_heads": 4,
             "features_extractor_class":CustomCombinedExtractor,
             "features_extractor_kwargs": {
                 "prob_hidden_dim": 16,
@@ -75,4 +75,4 @@ model_envs: DQNModelSettings = {
 
 
 if __name__ == "__main__":
-    train(train_envs, model_envs, DQN) #, continue_from="./logs/checkpoints/DQN.transformer-L2-H4-Emb128-lrdecay3e-4/rl_model_1000000_steps.zip"
+    train(train_envs, model_envs, DQN, continue_from="./logs/checkpoints/DQN.transformer-L3-H4-Emb128-lrdecay3e-4-lockemb/rl_model_2000000_steps.zip")
