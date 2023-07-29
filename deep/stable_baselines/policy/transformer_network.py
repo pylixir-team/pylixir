@@ -85,6 +85,7 @@ class TransformerDecisionNet(nn.Module):
             hidden_dimension: int = 64,
             transformer_layers: int = 3,
             transformer_heads: int = 8,
+            **kwargs,
         ):
 
         super(TransformerDecisionNet, self).__init__()
