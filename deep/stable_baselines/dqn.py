@@ -13,8 +13,8 @@ class DQNModelSettings(ModelSettings):
 train_envs = get_basic_train_settings(name="DQN")
 train_envs.update(
     {
-        "expname": "exp-neg-decay-b128-emb-majorkey",
-        "total_timesteps": int(15e5),
+        "expname": "no-text-embedding",
+        "total_timesteps": int(3e5),
         "checkpoint_freq": int(10e4),
         "eval_freq": int(10e4),
         "n_envs": 4
@@ -22,7 +22,7 @@ train_envs.update(
 )
 
 model_envs: DQNModelSettings = {
-    "policy": "MultiInputPolicy",
+    "policy": "MlpPolicy",
     "learning_rate": 0.0003,
     "seed": 37,
     "kwargs": {
@@ -30,13 +30,11 @@ model_envs: DQNModelSettings = {
         "tau": 0.5,
         "gamma": 0.99,
         "train_freq": 4,
-        "tensorboard_log": "./logs/tb/",
-        "verbose": 1,
         "policy_kwargs": {
             "activation_fn": torch.nn.ReLU,
             "net_arch": [128, 128],
-            "features_extractor_class":CustomCombinedExtractor,
-            "features_extractor_kwargs":dict(),
+            # "features_extractor_class":CustomCombinedExtractor,
+            # "features_extractor_kwargs":dict(),
         },
         "tensorboard_log": "./logs/tb/",
         "verbose": 1,
