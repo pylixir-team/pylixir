@@ -16,7 +16,7 @@ from tqdm import trange
 from deep.stable_baselines.util import ModelSettings, TrainSettings
 from pylixir.envs import register_env
 
-ENV_NAME = "DictPylixirEnv"
+ENV_NAME = "PylixirEnv"
 
 
 class CustomCallback(BaseCallback):
@@ -135,6 +135,7 @@ def train(
         "--------------------------------------------------------------------------------------------"
     )
     print("action space dimension : ", action_dim)
+    print("observation space dimension : ", env.observation_space.shape)
     print(
         "--------------------------------------------------------------------------------------------"
     )
