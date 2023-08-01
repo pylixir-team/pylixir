@@ -79,29 +79,13 @@ class SimpleTransformerDecisionNet(nn.Module):
         return action
 
 
-class TransformerDecisionNet(nn.Module):
+class DecisionNet(nn.Module):
     def __init__(self, 
             vector_size: int = 128, 
             hidden_dimension: int = 64,
-            transformer_layers: int = 3,
-            transformer_heads: int = 8,
             **kwargs,
         ):
-
-        super(TransformerDecisionNet, self).__init__()
-
-        self._transformer_layers = transformer_layers
-        self._transformer_heads = transformer_heads
-
-        self.pe = PositionalEncoding(vector_size, 0.0, 10)
-        self.mha = nn.ModuleList(
-            [nn.TransformerEncoderLayer(
-                vector_size,
-                self._transformer_heads,
-                dim_feedforward=vector_size * 4,
-                batch_first=True
-            ) for _ in range(self._transformer_layers)]
-        ) 
+        super(DecisionNet, self).__init__()
 
         self.nn = nn.Sequential(
             nn.Linear(vector_size * (1 + 1 + 2), hidden_dimension),
@@ -115,11 +99,6 @@ class TransformerDecisionNet(nn.Module):
         )
 
     def forward(self, x):
-        x = self.pe(x)
-
-        for attn in self.mha:
-            x = attn(x)
-
         boards = x[:, :5, :] # [B, 5, N]
         councils = x[:, 5:8, :] # [B, 3, N]
         ctxs = x[:, 8:, :] # [B, 2, N]
@@ -144,6 +123,48 @@ class TransformerDecisionNet(nn.Module):
         # Reroll defining network
         reroll = self.reroll(th.flatten(x, start_dim=1))
         action = th.cat([output, reroll], dim=1)
+
+        return action
+
+
+
+
+class TransformerDecisionNet(nn.Module):
+    def __init__(self, 
+            vector_size: int = 128, 
+            hidden_dimension: int = 64,
+            transformer_layers: int = 3,
+            transformer_heads: int = 8,
+            **kwargs,
+        ):
+
+        super(TransformerDecisionNet, self).__init__()
+
+        self._transformer_layers = transformer_layers
+        self._transformer_heads = transformer_heads
+
+        self.pe = PositionalEncoding(vector_size, 0.0, 10)
+        self.mha = nn.ModuleList(
+            [nn.TransformerEncoderLayer(
+                vector_size,
+                self._transformer_heads,
+                dim_feedforward=vector_size * 4,
+                batch_first=True
+            ) for _ in range(self._transformer_layers)]
+        )
+
+        self.decision_net = DecisionNet(
+            vector_size=vector_size,
+            hidden_dimension=hidden_dimension,
+        )
+
+    def forward(self, x):
+        x = self.pe(x)
+
+        for attn in self.mha:
+            x = attn(x)
+
+        action = self.decision_net(x)
 
         return action
 

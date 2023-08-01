@@ -5,6 +5,7 @@ from gymnasium import spaces
 import math
 
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from deep.stable_baselines.policy.transformer_network import PositionalEncoding
 
 
 class FloatExpansion(nn.Module):
@@ -141,3 +142,55 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
             return th.flatten(v, start_dim=1)
 
         return v
+
+
+class CombinedTransformerExtractor(BaseFeaturesExtractor):
+    def __init__(self, 
+            observation_space: spaces.Dict,
+            prob_hidden_dim: int = 16,
+            suggesion_feature_hidden_dim: int = 16,
+            embedding_dim: int = 128,
+            flatten_output: bool = True,
+
+            vector_size: int = 128, 
+            transformer_layers: int = 3,
+            transformer_heads: int = 8,
+        ):
+        super().__init__(observation_space, features_dim=1)
+
+        self.custom_combined_extractor = CustomCombinedExtractor(
+            observation_space=observation_space,
+            prob_hidden_dim=prob_hidden_dim,
+            suggesion_feature_hidden_dim=suggesion_feature_hidden_dim,
+            embedding_dim=embedding_dim,
+            flatten_output=False
+        )
+
+        self._transformer_layers = transformer_layers
+        self._transformer_heads = transformer_heads
+        self._flatten_output = flatten_output
+
+        self.pe = PositionalEncoding(vector_size, 0.0, 10)
+        self.mha = nn.ModuleList(
+            [nn.TransformerEncoderLayer(
+                vector_size,
+                self._transformer_heads,
+                dim_feedforward=vector_size * 2,
+                batch_first=True
+            ) for _ in range(self._transformer_layers)]
+        ) 
+
+    def forward(self, observations) -> th.Tensor:
+        combined_feture = self.custom_combined_extractor(
+            observations
+        )
+
+        x = self.pe(combined_feture)
+
+        for attn in self.mha:
+            x = attn(x)
+
+        if self._flatten_output:
+            return th.flatten(x, start_dim=1)
+
+        return x

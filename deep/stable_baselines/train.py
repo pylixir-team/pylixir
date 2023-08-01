@@ -116,7 +116,7 @@ def train(
     n_envs = train_envs["n_envs"]
     # Env Control
     register_env()
-    env = make_vec_env(f"pylixir/{ENV_NAME}-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs)
+    env = make_vec_env(f"pylixir/{ENV_NAME}-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs, seed=0)
     # env = PylixirEnv()
     # env.reset(0)
     action_dim = env.action_space.n

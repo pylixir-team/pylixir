@@ -15,8 +15,8 @@ class DQNModelSettings(ModelSettings):
 train_envs = get_basic_train_settings(name="DQN")
 train_envs.update(
     {
-        "expname": "transformer-L3-H4-Emb128-lrdecay3e-4-CONT-high-reward",
-        "total_timesteps": int(40e5),
+        "expname": "transformer-L3-H4-Emb128-lrdecay3e-4",
+        "total_timesteps": int(20e5),
         "checkpoint_freq": int(10e4),
         "eval_freq": int(10e4),
         "n_envs": 4
@@ -75,4 +75,4 @@ model_envs: DQNModelSettings = {
 
 
 if __name__ == "__main__":
-    train(train_envs, model_envs, DQN, continue_from="./logs/checkpoints/DQN.transformer-L3-H4-Emb128-lrdecay3e-4-lockemb/rl_model_2000000_steps.zip")
+    train(train_envs, model_envs, DQN)
