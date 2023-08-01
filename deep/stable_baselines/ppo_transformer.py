@@ -2,7 +2,7 @@ from stable_baselines3 import PPO
 
 from deep.stable_baselines.train import train
 from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
-from deep.stable_baselines.policy.council_feature import CustomCombinedExtractor
+from deep.stable_baselines.policy.council_feature import CustomCombinedExtractor ,CombinedTransformerExtractor
 from deep.stable_baselines.policy.ppo_transformer_network import PPOTransformerPolicy
 
 
@@ -13,7 +13,7 @@ class PPOModelSettings(ModelSettings):
 train_envs = get_basic_train_settings(name="PPO")
 train_envs.update(
     {
-        "expname": "transformer-L3-H4-Emb128-lrdecay1e-3",
+        "expname": "transformer-L3-H4-Emb128-1e-4-disentangle-obs-mid-12",
         "total_timesteps": int(40e5),
         "checkpoint_freq": int(10e4),
         "eval_freq": int(10e4),
@@ -44,7 +44,7 @@ class LearningRateDecay():
 
 model_envs: PPOModelSettings = {
     "policy": PPOTransformerPolicy,
-    "learning_rate": LearningRateDecay(1e-3, 1e-4),
+    "learning_rate": 1e-4,
     "seed": 37,
     "kwargs": {
         "batch_size": 32,

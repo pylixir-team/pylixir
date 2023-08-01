@@ -15,7 +15,7 @@ from stable_baselines3.common.torch_layers import (
     FlattenExtractor,
     MlpExtractor,
 )
-from deep.stable_baselines.policy.transformer_network import TransformerDecisionNet
+from deep.stable_baselines.policy.transformer_network import DecisionNet, TransformerDecisionNet
 
 
 class PPOTransformerPolicy(ActorCriticPolicy):
@@ -100,10 +100,11 @@ class PPOTransformerPolicy(ActorCriticPolicy):
         )
         self.action_net = self._make_action_net()
         self.value_net = nn.Sequential(
-            nn.Linear(
-                self.mlp_extractor.latent_dim_vf, 64
-            ),
             nn.Flatten(start_dim=1),
+            nn.Linear(
+                1280, 64
+            ),
+            nn.ReLU(),
             nn.Linear(
                 64, 1
             )
