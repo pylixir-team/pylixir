@@ -15,7 +15,7 @@ class DQNModelSettings(ModelSettings):
 train_envs = get_basic_train_settings(name="DQN")
 train_envs.update(
     {
-        "expname": "transformer-L3-H4-Emb128-lrdecay3e-4",
+        "expname": "transformer-L3-H4-Emb128-lrdecay3e-4-council-valuation",
         "total_timesteps": int(20e5),
         "checkpoint_freq": int(10e4),
         "eval_freq": int(10e4),

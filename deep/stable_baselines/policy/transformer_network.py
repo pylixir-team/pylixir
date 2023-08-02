@@ -98,6 +98,12 @@ class DecisionNet(nn.Module):
             nn.Linear(hidden_dimension, 1),
         )
 
+        self.council_value_net = nn.Sequential(
+            nn.Linear(vector_size, hidden_dimension),
+            nn.ReLU(),
+            nn.Linear(hidden_dimension, 1),
+        )
+
     def forward(self, x):
         boards = x[:, :5, :] # [B, 5, N]
         councils = x[:, 5:8, :] # [B, 3, N]
@@ -107,6 +113,15 @@ class DecisionNet(nn.Module):
         ctxs = th.stack([ctxs, ctxs, ctxs], dim=1)
         ctxs = th.stack([ctxs, ctxs, ctxs, ctxs, ctxs], dim=1)
 
+        # council-only Q-net
+        council_only_value = self.council_value_net(councils)
+        council_only_value = th.cat(
+            [council_only_value, council_only_value, council_only_value, council_only_value, council_only_value],
+            dim=1
+        )
+        council_only_value = council_only_value.squeeze(dim=-1)
+
+        # board - council Q-net
         boards = th.stack(
             [boards, boards, boards], dim=2
         )
@@ -119,6 +134,7 @@ class DecisionNet(nn.Module):
         output = self.nn(action_space_vector)
 
         output = th.flatten(th.squeeze(output, dim=1), start_dim=1)
+        output += council_only_value
 
         # Reroll defining network
         reroll = self.reroll(th.flatten(x, start_dim=1))
