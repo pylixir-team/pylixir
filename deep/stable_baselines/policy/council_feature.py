@@ -2,8 +2,10 @@ import gymnasium as gym
 import torch as th
 from torch import nn
 from gymnasium import spaces
+import math
 
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from deep.stable_baselines.policy.transformer_network import PositionalEncoding
 
 
 class FloatExpansion(nn.Module):
@@ -36,21 +38,25 @@ def get_major_key(full_key: str) -> str:
 
     return main_key
 
+
 class CustomCombinedExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space: spaces.Dict):
+    def __init__(self, 
+            observation_space: spaces.Dict,
+            prob_hidden_dim: int = 16,
+            suggesion_feature_hidden_dim: int = 16,
+            embedding_dim: int = 128,
+            flatten_output: bool = True,
+        ):
         # We do not know features-dim here before going over all the items,
         # so put something dummy for now. PyTorch requires calling
         # nn.Module.__init__ before adding modules
         super().__init__(observation_space, features_dim=1)
 
         extractors = {}
-
-        total_concat_size = 0
-
-        FLOATING_EMBEDDING_SIZE = 16
-        SUGGESION_EMBEDDING_SIZE = 16
-        
-        COLLECTION_EMBEDDING_SIZE = 256
+        self._prob_hidden_dim = prob_hidden_dim
+        self._suggesion_feature_hidden_dim = suggesion_feature_hidden_dim
+        self._embedding_dim = embedding_dim
+        self._flatten_output = flatten_output
 
         board_embedding_size = 0
         council_embedding_size = 0
@@ -60,37 +66,41 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         for key, subspace in observation_space.spaces.items():
             if key in extractors:
                 continue
-            elif isinstance(subspace, spaces.Box):
+            elif isinstance(subspace, spaces.Box):                    
                 extractors[key] = nn.Sequential(
                     nn.Flatten(),
-                    FloatExpansion(FLOATING_EMBEDDING_SIZE),
+                    FloatExpansion(prob_hidden_dim),
                 )
-                total_concat_size += FLOATING_EMBEDDING_SIZE * subspace.shape[0]
-                board_embedding_size += FLOATING_EMBEDDING_SIZE
+                board_embedding_size += prob_hidden_dim
             elif isinstance(subspace, spaces.Discrete):
+                if key in ("turn_left", "reroll"):
+                    extractors[key] = nn.Sequential(
+                        nn.Flatten(),
+                        nn.Linear(subspace.n, embedding_dim)
+                    )
+                    continue
+
                 main_key = get_major_key(key)
                 if main_key not in extractors:
                     extractors[main_key] = nn.Sequential(
                         nn.Flatten(),
-                        nn.Linear(subspace.n, SUGGESION_EMBEDDING_SIZE)
+                        nn.Linear(subspace.n, suggesion_feature_hidden_dim)
                     )
                     if "suggestion" in main_key or "committee" in main_key:
-                        council_embedding_size += SUGGESION_EMBEDDING_SIZE
+                        council_embedding_size += suggesion_feature_hidden_dim
 
                 extractors[key] = extractors[main_key]
-                total_concat_size += SUGGESION_EMBEDDING_SIZE
             else:
                 raise ValueError
 
-        board_embedding_size += SUGGESION_EMBEDDING_SIZE
+        board_embedding_size += suggesion_feature_hidden_dim
 
         self.extractors = nn.ModuleDict(extractors)
-        self.council_collector = nn.Linear(council_embedding_size, COLLECTION_EMBEDDING_SIZE)
-        self.board_collector = nn.Linear(board_embedding_size, COLLECTION_EMBEDDING_SIZE)
+        self.council_collector = nn.Linear(council_embedding_size, embedding_dim)
+        self.board_collector = nn.Linear(board_embedding_size, embedding_dim)
 
         # Update the features dim manually
-        # self._features_dim = total_concat_size
-        self._features_dim = COLLECTION_EMBEDDING_SIZE * (3 + 5) + SUGGESION_EMBEDDING_SIZE * 2
+        self._features_dim = embedding_dim * (3 + 5 + 2)
 
     def forward(self, observations) -> th.Tensor:
         encoded_tensor_map = {}
@@ -126,5 +136,61 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         encoded_tensor_list.append(encoded_tensor_map["turn_left"])
         encoded_tensor_list.append(encoded_tensor_map["reroll"])
 
-        # Return a (B, self._features_dim) PyTorch tensor, where B is batch dimension.
-        return th.cat(encoded_tensor_list, dim=1)
+        v = th.stack(encoded_tensor_list, dim=1)
+
+        if self._flatten_output:
+            return th.flatten(v, start_dim=1)
+
+        return v
+
+
+class CombinedTransformerExtractor(BaseFeaturesExtractor):
+    def __init__(self, 
+            observation_space: spaces.Dict,
+            prob_hidden_dim: int = 16,
+            suggesion_feature_hidden_dim: int = 16,
+            embedding_dim: int = 128,
+            flatten_output: bool = True,
+
+            vector_size: int = 128, 
+            transformer_layers: int = 3,
+            transformer_heads: int = 8,
+        ):
+        super().__init__(observation_space, features_dim=1)
+
+        self.custom_combined_extractor = CustomCombinedExtractor(
+            observation_space=observation_space,
+            prob_hidden_dim=prob_hidden_dim,
+            suggesion_feature_hidden_dim=suggesion_feature_hidden_dim,
+            embedding_dim=embedding_dim,
+            flatten_output=False
+        )
+
+        self._transformer_layers = transformer_layers
+        self._transformer_heads = transformer_heads
+        self._flatten_output = flatten_output
+
+        self.pe = PositionalEncoding(vector_size, 0.0, 10)
+        self.mha = nn.ModuleList(
+            [nn.TransformerEncoderLayer(
+                vector_size,
+                self._transformer_heads,
+                dim_feedforward=vector_size * 2,
+                batch_first=True
+            ) for _ in range(self._transformer_layers)]
+        ) 
+
+    def forward(self, observations) -> th.Tensor:
+        combined_feture = self.custom_combined_extractor(
+            observations
+        )
+
+        x = self.pe(combined_feture)
+
+        for attn in self.mha:
+            x = attn(x)
+
+        if self._flatten_output:
+            return th.flatten(x, start_dim=1)
+
+        return x
