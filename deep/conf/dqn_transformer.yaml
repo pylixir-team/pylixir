@@ -1,0 +1,36 @@
+architecture: DQN
+
+train:
+  name: DQN
+  expname: transformer-L3-H4-Emb128-lrdecay3e-4-example
+  total_timesteps: 2000000
+  log_interval: 1000
+  checkpoint_freq: 100000
+  eval_freq: 100000
+  evaluation_n: 250
+  n_envs: 4
+
+model:
+  policy: TransformerQPolicy
+  learning_rate: 
+    start: 0.0003
+    end: 0.00003
+  seed: 37
+  kwargs:
+    batch_size: 128
+    tau: 0.5
+    gamma: 0.99
+    train_freq: 4
+    tensorboard_log: ./logs/tb/
+    verbose: 1
+    policy_kwargs:
+      transformer_layers: 3
+      vector_size: 128
+      hidden_dimension: 128
+      transformer_heads: 4
+      features_extractor_class: CustomCombinedExtractor
+      features_extractor_kwargs:
+        prob_hidden_dim: 16
+        suggesion_feature_hidden_dim: 16
+        embedding_dim: 128
+        flatten_output: False

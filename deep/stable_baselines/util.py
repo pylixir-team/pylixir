@@ -31,3 +31,23 @@ class ModelSettings(TypedDict):
     learning_rate: float
     seed: float
     kwargs: dict  # network-specific hyperparams
+
+
+class LearningRateDecay:
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+    def __repr__(self):
+        return f"LearningRateDecay:<{self.start}>-><{self.end}>"
+
+    def __call__(self, progress: float) -> float:
+        rate = self.end / self.start
+        progress = 1 - progress
+
+        if progress < 0.2:
+            return self.start * (5 * progress)
+
+        progress = (progress - 0.2) * 1.25
+
+        return self.start * (rate**progress)

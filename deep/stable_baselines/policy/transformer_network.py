@@ -328,9 +328,9 @@ class TransformerQPolicy(BasePolicy):
         return self._predict(obs, deterministic=deterministic)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
-        return self.q_net._predict(
+        return self.q_net._predict(  # pylint: disable=protected-access
             observation, deterministic=deterministic
-        )  # pylint: disable=protected-access
+        )
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()
