@@ -6,10 +6,6 @@ from deep.stable_baselines.train import train
 from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
 
 
-class DQNModelSettings(ModelSettings):
-    ...
-
-
 train_envs = get_basic_train_settings(name="DQN")
 train_envs.update(
     {
@@ -21,7 +17,7 @@ train_envs.update(
     }
 )
 
-model_envs: DQNModelSettings = {
+model_envs: ModelSettings = {
     "policy": "MultiInputPolicy",
     "learning_rate": 0.0003,
     "seed": 37,

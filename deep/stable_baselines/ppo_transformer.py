@@ -6,10 +6,6 @@ from deep.stable_baselines.train import train
 from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
 
 
-class PPOModelSettings(ModelSettings):
-    ...
-
-
 train_envs = get_basic_train_settings(name="PPO")
 train_envs.update(
     {
@@ -42,7 +38,7 @@ class LearningRateDecay:
         return self.start * (rate**progress)
 
 
-model_envs: PPOModelSettings = {
+model_envs: ModelSettings = {
     "policy": PPOTransformerPolicy,
     "learning_rate": 1e-4,
     "seed": 37,

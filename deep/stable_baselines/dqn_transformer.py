@@ -6,10 +6,6 @@ from deep.stable_baselines.train import train
 from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
 
 
-class DQNModelSettings(ModelSettings):
-    ...
-
-
 train_envs = get_basic_train_settings(name="DQN")
 train_envs.update(
     {
@@ -42,7 +38,7 @@ class LearningRateDecay:
         return self.start * (rate**progress)
 
 
-model_envs: DQNModelSettings = {
+model_envs: ModelSettings = {
     "policy": TransformerQPolicy,
     "learning_rate": LearningRateDecay(3e-4, 3e-5),
     "seed": 37,
