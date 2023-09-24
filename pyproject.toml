@@ -1,12 +1,12 @@
 [tool.poe.tasks]
-black-check = "black --check pylixir tests"
-isort-check = "isort --check-only pylixir tests"
+black-check = "black --check pylixir tests deep"
+isort-check = "isort --check-only pylixir tests deep"
 
-black = "black pylixir tests"
-isort = "isort pylixir tests"
+black = "black pylixir tests deep"
+isort = "isort pylixir tests deep"
 
 format = ["black", "isort"]
-lint = "pylint pylixir tests"
+lint = "pylint pylixir tests deep"
 coverage = "pytest --cov=pylixir"
 unittest = "pytest -vv -x tests/"
 typetest = "mypy pylixir tests"

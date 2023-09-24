@@ -1,16 +1,20 @@
-import os, time, random
-from typing import Type, Union
 import json
+import os
+import random
+import time
 from pathlib import Path
-
+from typing import Type, Union
 
 import gymnasium as gym
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.callbacks import CheckpointCallback, CallbackList, EvalCallback, BaseCallback, EveryNTimesteps
-from stable_baselines3.common.logger import configure
+from stable_baselines3.common.callbacks import (
+    BaseCallback,
+    CallbackList,
+    CheckpointCallback,
+)
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.vec_env import VecEnv
 from tqdm import trange
 
 from deep.stable_baselines.util import ModelSettings, TrainSettings
@@ -25,8 +29,9 @@ class CustomCallback(BaseCallback):
 
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
+
     def __init__(self, verbose=0, eval_freq=10000, n_eval_episodes=1000):
-        super(CustomCallback, self).__init__(verbose)
+        super().__init__(verbose)
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
         # The RL model
@@ -47,20 +52,6 @@ class CustomCallback(BaseCallback):
         self.eval_freq = eval_freq
         self.n_eval_episodes = n_eval_episodes
 
-    def _on_training_start(self) -> None:
-        """
-        This method is called before the first rollout starts.
-        """
-        pass
-
-    def _on_rollout_start(self) -> None:
-        """
-        A rollout is the collection of environment interaction
-        using the current policy.
-        This event is triggered before collecting new samples.
-        """
-        pass
-
     def _on_step(self) -> bool:
         """
         This method will be called by the model after each call to `env.step()`.
@@ -71,32 +62,21 @@ class CustomCallback(BaseCallback):
         :return: (bool) If the callback returns False, training is aborted early.
         """
         if self.n_calls % self.eval_freq == 0:
-            mean, std, success_rate = evaluate(self.model, self.training_env, max_seed=self.n_eval_episodes)
+            mean, std, success_rate = evaluate(
+                self.model, self.training_env, max_seed=self.n_eval_episodes
+            )
             self.logger.record("eval/mean", mean)
             self.logger.record("eval/std", std)
             self.logger.record("eval/success_rate", success_rate)
         return True
 
-    def _on_rollout_end(self) -> None:
-        """
-        This event is triggered before updating the policy.
-        """
-        pass
-
-    def _on_training_end(self) -> None:
-        """
-        This event is triggered before exiting the `learn()` method.
-        """
-        pass
 
 def _serialize_config(nested_dict):
     if isinstance(nested_dict, (int, str, float, bool)):
         return nested_dict
 
     if isinstance(nested_dict, list):
-        return [
-            _serialize_config(vv) for vv in nested_dict
-        ]
+        return [_serialize_config(vv) for vv in nested_dict]
 
     output = {}
     for k, v in nested_dict.items():
@@ -111,12 +91,20 @@ def _serialize_config(nested_dict):
 
 
 def train(
-    train_envs: TrainSettings, model_envs: ModelSettings, Model: Type[BaseAlgorithm], continue_from: str = "",
+    train_envs: TrainSettings,
+    model_envs: ModelSettings,
+    Model: Type[BaseAlgorithm],
+    continue_from: str = "",
 ) -> None:
     n_envs = train_envs["n_envs"]
     # Env Control
     register_env()
-    env = make_vec_env(f"pylixir/{ENV_NAME}-v0", env_kwargs={"render_mode": "human"}, n_envs=n_envs, seed=0)
+    env = make_vec_env(
+        f"pylixir/{ENV_NAME}-v0",
+        env_kwargs={"render_mode": "human"},
+        n_envs=n_envs,
+        seed=0,
+    )
     # env = PylixirEnv()
     # env.reset(0)
     action_dim = env.action_space.n
@@ -147,12 +135,18 @@ def train(
     else:
         # Create Model
         model = Model(
-            model_envs["policy"], env, model_envs["learning_rate"], seed=model_envs["seed"], **model_envs["kwargs"]
+            model_envs["policy"],
+            env,
+            model_envs["learning_rate"],
+            seed=model_envs["seed"],
+            **model_envs["kwargs"],
         )
         model.set_random_seed(model_envs["seed"])
 
     checkpoint_callback = get_callback(
-        train_envs["checkpoint_freq"] // n_envs, train_envs["eval_freq"] // n_envs, f"./logs/checkpoints/{train_envs['name']}.{train_envs['expname']}"
+        train_envs["checkpoint_freq"] // n_envs,
+        train_envs["eval_freq"] // n_envs,
+        f"./logs/checkpoints/{train_envs['name']}.{train_envs['expname']}",
     )
     model_dirname = f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}"
     try:
@@ -161,17 +155,14 @@ def train(
         print("Given exp name already exist")
         raise e
 
-    with open(os.path.join(model_dirname, "config.json"), "w") as f:
-        json.dump(_serialize_config({
-            "train": train_envs,
-            "model": model_envs
-        }), f, indent=2)
+    with open(os.path.join(model_dirname, "config.json"), "w", encoding="utf-8") as f:
+        json.dump(
+            _serialize_config({"train": train_envs, "model": model_envs}), f, indent=2
+        )
 
     print(model.policy)
     random.seed(model_envs["seed"])
-    evaluate(
-        model, env, max_seed=train_envs["evaluation_n"], render=False
-    )
+    evaluate(model, env, max_seed=train_envs["evaluation_n"], render=False)
 
     # Train Model
     model.learn(
@@ -182,14 +173,14 @@ def train(
         tb_log_name=f"{train_envs['name']}.{train_envs['expname']}",
     )
     # Save Model
-    model_path = f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}/latest.zip"
+    model_path = (
+        f"logs/checkpoints/{train_envs['name']}.{train_envs['expname']}/latest.zip"
+    )
     model.save(model_path)
     # model.set_parameters(model_path)
 
     random.seed(model_envs["seed"])
-    evaluate(
-        model, env, max_seed=train_envs["evaluation_n"], render=False
-    )
+    evaluate(model, env, max_seed=train_envs["evaluation_n"], render=False)
     # model.set_parameters(model_path)
 
 
@@ -197,7 +188,8 @@ def get_callback(
     checkpoint_freq: int, eval_freq: int, checkpoint_path: str
 ) -> CallbackList:
     checkpoint_callback = CheckpointCallback(
-        save_freq=checkpoint_freq, save_path=checkpoint_path # , name_prefix=checkpoint_name
+        save_freq=checkpoint_freq,
+        save_path=checkpoint_path,  # , name_prefix=checkpoint_name
     )
     # checkpoint_callback = EveryNTimesteps(n_steps=checkpoint_freq, callback=checkpoint_callback)
     eval_callback = CustomCallback(eval_freq=eval_freq)
@@ -214,6 +206,7 @@ def get_callback(
     callback = CallbackList([checkpoint_callback, eval_callback])
     # callback = EveryNTimesteps(n_steps=eval_freq, callback=callback)
     return callback
+
 
 # def evaluate(
 #     model: BaseAlgorithm, env: Union[gym.Env, VecEnv], threshold: int = 14, max_seed: int = 100000, render: bool = False
@@ -235,7 +228,11 @@ def get_callback(
 
 
 def evaluate_model(
-    model: BaseAlgorithm, env: Union[gym.Env, VecEnv], threshold: int = 14, max_seed: int = 100000, render: bool = False
+    model: BaseAlgorithm,
+    env: Union[gym.Env, VecEnv],
+    threshold: int = 14,
+    max_seed: int = 100000,
+    render: bool = False,
 ) -> tuple[float, float, float]:
     av_ep_lens, avg_rewards, success_rate = 0, 0, 0
     neg_rew = 0
@@ -275,15 +272,30 @@ def evaluate_model(
     print(f"Wrong choice: {neg_rew}")
 
     return tuple(
-        map(lambda x: float(x / max_seed), (av_ep_lens, avg_rewards, success_rate, success_rate_14, success_rate_16, success_rate_18))
+        map(
+            lambda x: float(x / max_seed),
+            (
+                av_ep_lens,
+                avg_rewards,
+                success_rate,
+                success_rate_14,
+                success_rate_16,
+                success_rate_18,
+            ),
+        )
     )
 
+
 def evaluate(
-    model: BaseAlgorithm, env: Union[gym.Env, VecEnv], threshold: int = 14, max_seed: int = 100000, render: bool = False
+    model: BaseAlgorithm,
+    env: Union[gym.Env, VecEnv],
+    threshold: int = 14,
+    max_seed: int = 100000,
+    render: bool = False,
 ):
     def callback(local_vars, global_vars):
         nonlocal success_rate_14, success_rate_16, success_rate_18
-        nonlocal average_enchant_count # or global cnt for global variable cnt
+        nonlocal average_enchant_count  # or global cnt for global variable cnt
         if local_vars["done"]:
             success_rate_14 += local_vars["info"]["current_valuation"] >= 14
             success_rate_16 += local_vars["info"]["current_valuation"] >= 16
@@ -297,7 +309,9 @@ def evaluate(
     average_enchant_count = 0
 
     # random.seed(37)
-    mean, std = evaluate_policy(model, env, n_eval_episodes=max_seed, render=render, callback=callback)
+    mean, std = evaluate_policy(
+        model, env, n_eval_episodes=max_seed, render=render, callback=callback
+    )
     print(f"mean: {mean}, std: {std}")
     print(f"Success rate[14] (%): {success_rate_14 / max_seed * 100}")
     print(f"Success rate[16] (%): {success_rate_16 / max_seed * 100}")

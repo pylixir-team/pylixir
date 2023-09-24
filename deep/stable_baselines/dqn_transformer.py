@@ -1,12 +1,10 @@
-from typing import Any
-import torch
 from stable_baselines3 import DQN
 
-from deep.stable_baselines.train import train
-from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
 from deep.stable_baselines.policy.council_feature import CustomCombinedExtractor
 from deep.stable_baselines.policy.transformer_network import TransformerQPolicy
-from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
+from deep.stable_baselines.train import train
+from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
+
 
 class DQNModelSettings(ModelSettings):
     ...
@@ -19,18 +17,18 @@ train_envs.update(
         "total_timesteps": int(20e5),
         "checkpoint_freq": int(10e4),
         "eval_freq": int(10e4),
-        "n_envs": 4
+        "n_envs": 4,
     }
 )
 
 
-class LearningRateDecay():
+class LearningRateDecay:
     def __init__(self, start, end):
         self.start = start
         self.end = end
 
     def __repr__(self):
-        return f"LearningRateDecay:<{self.start}>-><{self.end}>"        
+        return f"LearningRateDecay:<{self.start}>-><{self.end}>"
 
     def __call__(self, progress: float) -> float:
         rate = self.end / self.start
@@ -41,7 +39,7 @@ class LearningRateDecay():
 
         progress = (progress - 0.2) * 1.25
 
-        return self.start * (rate ** progress)
+        return self.start * (rate**progress)
 
 
 model_envs: DQNModelSettings = {
@@ -60,16 +58,14 @@ model_envs: DQNModelSettings = {
             "vector_size": 128,
             "hidden_dimension": 128,
             "transformer_heads": 4,
-            "features_extractor_class":CustomCombinedExtractor,
+            "features_extractor_class": CustomCombinedExtractor,
             "features_extractor_kwargs": {
                 "prob_hidden_dim": 16,
                 "suggesion_feature_hidden_dim": 16,
                 "embedding_dim": 128,
-                "flatten_output": False
+                "flatten_output": False,
             },
         },
-        "tensorboard_log": "./logs/tb/",
-        "verbose": 1,
     },
 }
 

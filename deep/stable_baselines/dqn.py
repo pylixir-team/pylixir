@@ -1,10 +1,10 @@
 import torch
 from stable_baselines3 import DQN
 
+from deep.stable_baselines.policy.council_feature import CustomCombinedExtractor
 from deep.stable_baselines.train import train
 from deep.stable_baselines.util import ModelSettings, get_basic_train_settings
-from deep.stable_baselines.policy.council_feature import CustomCombinedExtractor
-from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
+
 
 class DQNModelSettings(ModelSettings):
     ...
@@ -17,7 +17,7 @@ train_envs.update(
         "total_timesteps": int(15e5),
         "checkpoint_freq": int(10e4),
         "eval_freq": int(10e4),
-        "n_envs": 4
+        "n_envs": 4,
     }
 )
 
@@ -35,11 +35,9 @@ model_envs: DQNModelSettings = {
         "policy_kwargs": {
             "activation_fn": torch.nn.ReLU,
             "net_arch": [128, 128],
-            "features_extractor_class":CustomCombinedExtractor,
-            "features_extractor_kwargs":dict(),
+            "features_extractor_class": CustomCombinedExtractor,
+            "features_extractor_kwargs": {},
         },
-        "tensorboard_log": "./logs/tb/",
-        "verbose": 1,
     },
 }
 

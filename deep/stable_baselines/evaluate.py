@@ -1,12 +1,16 @@
-from stable_baselines3 import DQN, PPO
+from stable_baselines3 import DQN
 
 from deep.stable_baselines.train import evaluate_model
 from pylixir.envs.DictPylixirEnv import DictPylixirEnv
 
-model = DQN.load("./logs/checkpoints/DQN.exp-neg-decay-b128-emb/rl_model_1500000_steps.zip")
-#model = PPO.load("./logs/checkpoints/PPO.init-3e-4/rl_model_1500000_steps.zip")
+model = DQN.load(
+    "./logs/checkpoints/DQN.exp-neg-decay-b128-emb/rl_model_1500000_steps.zip"
+)
+# model = PPO.load("./logs/checkpoints/PPO.init-3e-4/rl_model_1500000_steps.zip")
 env = DictPylixirEnv()
-av_ep_lens, avg_rewards, success_rate, r_14, r_16, r_18 = evaluate_model(model, env, max_seed=10000, threshold=14, render=False)
+av_ep_lens, avg_rewards, success_rate, r_14, r_16, r_18 = evaluate_model(
+    model, env, max_seed=10000, threshold=14, render=False
+)
 print(
     "--------------------------------------------------------------------------------------------"
 )
