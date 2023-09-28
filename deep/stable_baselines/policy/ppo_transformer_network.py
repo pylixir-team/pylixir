@@ -1,21 +1,17 @@
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 import torch as th
 from gymnasium import spaces
-from torch import nn
-
 from stable_baselines3.common.policies import ActorCriticPolicy
-from stable_baselines3.common.torch_layers import (
-    BaseFeaturesExtractor,
-    FlattenExtractor,
-)
-from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
     FlattenExtractor,
     MlpExtractor,
 )
-from deep.stable_baselines.policy.transformer_network import DecisionNet, TransformerDecisionNet
+from stable_baselines3.common.type_aliases import Schedule
+from torch import nn
+
+from deep.stable_baselines.policy.transformer_network import TransformerDecisionNet
 
 
 class PPOTransformerPolicy(ActorCriticPolicy):
@@ -30,7 +26,7 @@ class PPOTransformerPolicy(ActorCriticPolicy):
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
-        vector_size: int = 128, 
+        vector_size: int = 128,
         hidden_dimension: int = 64,
         transformer_layers: int = 3,
         transformer_heads: int = 8,
@@ -81,7 +77,9 @@ class PPOTransformerPolicy(ActorCriticPolicy):
 
     def _make_action_net(self) -> TransformerDecisionNet:
         # Make sure we always have separate networks for features extractors etc
-        net_args = self._update_features_extractor(self.net_args, features_extractor=None)
+        net_args = self._update_features_extractor(
+            self.net_args, features_extractor=None
+        )
         net_args.pop("features_dim")
         return TransformerDecisionNet(**net_args).to(self.device)
 
@@ -100,15 +98,10 @@ class PPOTransformerPolicy(ActorCriticPolicy):
         )
         self.action_net = self._make_action_net()
         self.value_net = nn.Sequential(
-            nn.Flatten(start_dim=1),
-            nn.Linear(
-                1280, 64
-            ),
-            nn.ReLU(),
-            nn.Linear(
-                64, 1
-            )
+            nn.Flatten(start_dim=1), nn.Linear(1280, 64), nn.ReLU(), nn.Linear(64, 1)
         )
 
         # Setup optimizer with initial learning rate
-        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
+        self.optimizer = self.optimizer_class(
+            self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs
+        )

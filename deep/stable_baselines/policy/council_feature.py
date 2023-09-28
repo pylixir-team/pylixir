@@ -1,34 +1,33 @@
-import gymnasium as gym
 import torch as th
-from torch import nn
 from gymnasium import spaces
-import math
-
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from torch import nn
+
 from deep.stable_baselines.policy.transformer_network import PositionalEncoding
 
 
 class FloatExpansion(nn.Module):
     def __init__(self, size: int):
-        super(FloatExpansion, self).__init__()
+        super().__init__()
         self.lin_layer = nn.Linear(4, size)
 
     def forward(self, x):
-        v = th.stack([
-            x,
-            th.pow(x, 2),
-            th.pow(x, 3),
-            th.pow(x, 0.5),
-        ], -1)
+        v = th.stack(
+            [
+                x,
+                th.pow(x, 2),
+                th.pow(x, 3),
+                th.pow(x, 0.5),
+            ],
+            -1,
+        )
         v = self.lin_layer(v)
-        #v = th.flatten(v, 1)
+        # v = th.flatten(v, 1)
         return v
 
 
 def get_major_key(full_key: str) -> str:
-    main_key = full_key.replace(
-        "suggestion_2", "suggestion_0"
-    ).replace(
+    main_key = full_key.replace("suggestion_2", "suggestion_0").replace(
         "suggestion_1", "suggestion_0"
     )
     for idx in range(1, 5):
@@ -40,13 +39,14 @@ def get_major_key(full_key: str) -> str:
 
 
 class CustomCombinedExtractor(BaseFeaturesExtractor):
-    def __init__(self, 
-            observation_space: spaces.Dict,
-            prob_hidden_dim: int = 16,
-            suggesion_feature_hidden_dim: int = 16,
-            embedding_dim: int = 128,
-            flatten_output: bool = True,
-        ):
+    def __init__(
+        self,
+        observation_space: spaces.Dict,
+        prob_hidden_dim: int = 16,
+        suggesion_feature_hidden_dim: int = 16,
+        embedding_dim: int = 128,
+        flatten_output: bool = True,
+    ):
         # We do not know features-dim here before going over all the items,
         # so put something dummy for now. PyTorch requires calling
         # nn.Module.__init__ before adding modules
@@ -66,7 +66,7 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         for key, subspace in observation_space.spaces.items():
             if key in extractors:
                 continue
-            elif isinstance(subspace, spaces.Box):                    
+            if isinstance(subspace, spaces.Box):
                 extractors[key] = nn.Sequential(
                     nn.Flatten(),
                     FloatExpansion(prob_hidden_dim),
@@ -75,8 +75,7 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
             elif isinstance(subspace, spaces.Discrete):
                 if key in ("turn_left", "reroll"):
                     extractors[key] = nn.Sequential(
-                        nn.Flatten(),
-                        nn.Linear(subspace.n, embedding_dim)
+                        nn.Flatten(), nn.Linear(subspace.n, embedding_dim)
                     )
                     continue
 
@@ -84,7 +83,7 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
                 if main_key not in extractors:
                     extractors[main_key] = nn.Sequential(
                         nn.Flatten(),
-                        nn.Linear(subspace.n, suggesion_feature_hidden_dim)
+                        nn.Linear(subspace.n, suggesion_feature_hidden_dim),
                     )
                     if "suggestion" in main_key or "committee" in main_key:
                         council_embedding_size += suggesion_feature_hidden_dim
@@ -145,17 +144,17 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
 
 
 class CombinedTransformerExtractor(BaseFeaturesExtractor):
-    def __init__(self, 
-            observation_space: spaces.Dict,
-            prob_hidden_dim: int = 16,
-            suggesion_feature_hidden_dim: int = 16,
-            embedding_dim: int = 128,
-            flatten_output: bool = True,
-
-            vector_size: int = 128, 
-            transformer_layers: int = 3,
-            transformer_heads: int = 8,
-        ):
+    def __init__(
+        self,
+        observation_space: spaces.Dict,
+        prob_hidden_dim: int = 16,
+        suggesion_feature_hidden_dim: int = 16,
+        embedding_dim: int = 128,
+        flatten_output: bool = True,
+        vector_size: int = 128,
+        transformer_layers: int = 3,
+        transformer_heads: int = 8,
+    ):
         super().__init__(observation_space, features_dim=1)
 
         self.custom_combined_extractor = CustomCombinedExtractor(
@@ -163,7 +162,7 @@ class CombinedTransformerExtractor(BaseFeaturesExtractor):
             prob_hidden_dim=prob_hidden_dim,
             suggesion_feature_hidden_dim=suggesion_feature_hidden_dim,
             embedding_dim=embedding_dim,
-            flatten_output=False
+            flatten_output=False,
         )
 
         self._transformer_layers = transformer_layers
@@ -172,18 +171,19 @@ class CombinedTransformerExtractor(BaseFeaturesExtractor):
 
         self.pe = PositionalEncoding(vector_size, 0.0, 10)
         self.mha = nn.ModuleList(
-            [nn.TransformerEncoderLayer(
-                vector_size,
-                self._transformer_heads,
-                dim_feedforward=vector_size * 2,
-                batch_first=True
-            ) for _ in range(self._transformer_layers)]
-        ) 
+            [
+                nn.TransformerEncoderLayer(
+                    vector_size,
+                    self._transformer_heads,
+                    dim_feedforward=vector_size * 2,
+                    batch_first=True,
+                )
+                for _ in range(self._transformer_layers)
+            ]
+        )
 
     def forward(self, observations) -> th.Tensor:
-        combined_feture = self.custom_combined_extractor(
-            observations
-        )
+        combined_feture = self.custom_combined_extractor(observations)
 
         x = self.pe(combined_feture)
 
