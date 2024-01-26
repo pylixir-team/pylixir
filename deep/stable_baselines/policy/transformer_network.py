@@ -17,33 +17,38 @@ import math
 class PositionalEncoding(nn.Module):
     def __init__(self, dim_model, dropout_p, max_len):
         super().__init__()
-        
+
         self.dropout = nn.Dropout(dropout_p)
- 
+
         # Encoding - From formula
         pos_encoding = th.zeros(max_len, dim_model)
-        positions_list = th.arange(0, max_len, dtype=th.float).view(-1, 1) # 0, 1, 2, 3, 4, 5
-        division_term = th.exp(th.arange(0, dim_model, 2).float() * (-math.log(10000.0)) / dim_model) # 1000^(2i/dim_model)
- 
+        positions_list = th.arange(0, max_len, dtype=th.float).view(
+            -1, 1
+        )  # 0, 1, 2, 3, 4, 5
+        division_term = th.exp(
+            th.arange(0, dim_model, 2).float() * (-math.log(10000.0)) / dim_model
+        )  # 1000^(2i/dim_model)
+
         pos_encoding[:, 0::2] = th.sin(positions_list * division_term)
         pos_encoding[:, 1::2] = th.cos(positions_list * division_term)
- 
+
         # Saving buffer (same as parameter without gradients needed)
         pos_encoding = pos_encoding
         self.register_buffer("pos_encoding", pos_encoding)
- 
+
     def forward(self, token_embedding: th.tensor) -> th.tensor:
         # Residual connection + pos encoding
         return self.dropout(token_embedding + self.pos_encoding)
 
 
 class TransformerDecisionNet(nn.Module):
-    def __init__(self, 
-            vector_size: int = 128, 
-            hidden_dimension: int = 64,
-            transformer_layers: int = 3,
-            transformer_heads: int = 8,
-        ):
+    def __init__(
+        self,
+        vector_size: int = 128,
+        hidden_dimension: int = 64,
+        transformer_layers: int = 3,
+        transformer_heads: int = 8,
+    ):
 
         super(TransformerDecisionNet, self).__init__()
 
@@ -52,13 +57,16 @@ class TransformerDecisionNet(nn.Module):
 
         self.pe = PositionalEncoding(vector_size, 0.0, 10)
         self.mha = nn.ModuleList(
-            [nn.TransformerEncoderLayer(
-                vector_size,
-                self._transformer_heads,
-                dim_feedforward=vector_size * 4,
-                batch_first=True
-            ) for _ in range(self._transformer_layers)]
-        ) 
+            [
+                nn.TransformerEncoderLayer(
+                    vector_size,
+                    self._transformer_heads,
+                    dim_feedforward=vector_size * 4,
+                    batch_first=True,
+                )
+                for _ in range(self._transformer_layers)
+            ]
+        )
 
         self.nn = nn.Sequential(
             nn.Linear(vector_size * (1 + 1 + 2), hidden_dimension),
@@ -77,20 +85,16 @@ class TransformerDecisionNet(nn.Module):
         for attn in self.mha:
             x = attn(x)
 
-        boards = x[:, :5, :] # [B, 5, N]
-        councils = x[:, 5:8, :] # [B, 3, N]
-        ctxs = x[:, 8:, :] # [B, 2, N]
+        boards = x[:, :5, :]  # [B, 5, N]
+        councils = x[:, 5:8, :]  # [B, 3, N]
+        ctxs = x[:, 8:, :]  # [B, 2, N]
 
         ctxs = th.flatten(ctxs, 1)
         ctxs = th.stack([ctxs, ctxs, ctxs], dim=1)
         ctxs = th.stack([ctxs, ctxs, ctxs, ctxs, ctxs], dim=1)
 
-        boards = th.stack(
-            [boards, boards, boards], dim=2
-        )
-        councils = th.stack(
-            [councils, councils, councils, councils, councils], dim=1
-        )
+        boards = th.stack([boards, boards, boards], dim=2)
+        councils = th.stack([councils, councils, councils, councils, councils], dim=1)
 
         action_space_vector = th.cat([boards, councils], dim=-1)
         action_space_vector = th.cat([action_space_vector, ctxs], dim=-1)
@@ -123,7 +127,7 @@ class TransformerQNetwork(BasePolicy):
         action_space: spaces.Discrete,
         features_extractor: BaseFeaturesExtractor,
         normalize_images: bool = True,
-        vector_size: int = 128, 
+        vector_size: int = 128,
         hidden_dimension: int = 64,
         transformer_layers: int = 3,
         transformer_heads: int = 8,
@@ -192,7 +196,7 @@ class TransformerQPolicy(BasePolicy):
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
-        vector_size: int = 128, 
+        vector_size: int = 128,
         hidden_dimension: int = 64,
         transformer_layers: int = 3,
         transformer_heads: int = 8,
@@ -248,7 +252,9 @@ class TransformerQPolicy(BasePolicy):
 
     def make_q_net(self) -> TransformerQNetwork:
         # Make sure we always have separate networks for features extractors etc
-        net_args = self._update_features_extractor(self.net_args, features_extractor=None)
+        net_args = self._update_features_extractor(
+            self.net_args, features_extractor=None
+        )
         net_args.pop("features_dim")
         return TransformerQNetwork(**net_args).to(self.device)
 

@@ -13,7 +13,7 @@ train:
 model:
   policy: TransformerQPolicy
   learning_rate: 0.0002
-  seed: 37
+  seed: 42
   kwargs:
     batch_size: 128
     tau: 0.5
