@@ -13,7 +13,7 @@ model = DQN.load(model_zip_path)
 
 env = DictPylixirEnv()
 av_ep_lens, avg_rewards, success_rate, r_14, r_16, r_18 = evaluate_model(
-    model, env, max_seed=1000, threshold=14, render=False
+    model, env, max_seed=10000, threshold=14, render=False
 )
 print(
     "--------------------------------------------------------------------------------------------"
