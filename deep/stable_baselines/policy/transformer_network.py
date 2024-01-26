@@ -55,7 +55,7 @@ class TransformerDecisionNet(nn.Module):
             [nn.TransformerEncoderLayer(
                 vector_size,
                 self._transformer_heads,
-                dim_feedforward=vector_size * 2,
+                dim_feedforward=vector_size * 4,
                 batch_first=True
             ) for _ in range(self._transformer_layers)]
         ) 
