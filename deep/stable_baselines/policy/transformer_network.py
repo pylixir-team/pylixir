@@ -1,17 +1,15 @@
-from typing import Any, Dict, List, Optional, Type
+import math
+from typing import Any, Dict, Optional, Type
 
 import torch as th
 from gymnasium import spaces
-from torch import nn
-
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
     FlattenExtractor,
 )
 from stable_baselines3.common.type_aliases import Schedule
-from stable_baselines3.dqn.policies import DQNPolicy
-import math
+from torch import nn
 
 
 class PositionalEncoding(nn.Module):
@@ -33,7 +31,6 @@ class PositionalEncoding(nn.Module):
         pos_encoding[:, 1::2] = th.cos(positions_list * division_term)
 
         # Saving buffer (same as parameter without gradients needed)
-        pos_encoding = pos_encoding
         self.register_buffer("pos_encoding", pos_encoding)
 
     def forward(self, token_embedding: th.tensor) -> th.tensor:
@@ -50,7 +47,7 @@ class TransformerDecisionNet(nn.Module):
         transformer_heads: int = 8,
     ):
 
-        super(TransformerDecisionNet, self).__init__()
+        super().__init__()
 
         self._transformer_layers = transformer_layers
         self._transformer_heads = transformer_heads
@@ -261,8 +258,10 @@ class TransformerQPolicy(BasePolicy):
     def forward(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
         return self._predict(obs, deterministic=deterministic)
 
-    def _predict(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
-        return self.q_net._predict(obs, deterministic=deterministic)
+    def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
+        return self.q_net._predict(  # pylint: disable=protected-access
+            observation, deterministic=deterministic
+        )
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()
