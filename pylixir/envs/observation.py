@@ -254,8 +254,14 @@ class DictObservation:
 
     def _board_to_vector(self, board: Board) -> dict[str, int]:
         effect_count = board.get_effect_values()
+        locked_indices = board.locked_indices()
 
-        return {f"board_{idx}": cnt for idx, cnt in enumerate(effect_count)}
+        lock_added_effect_count = [
+            (11 if idx in locked_indices else cnt)
+            for idx, cnt in enumerate(effect_count)
+        ]
+
+        return {f"board_{idx}": cnt for idx, cnt in enumerate(lock_added_effect_count)}
 
     def _enchanter_to_vector(
         self, enchanter: Enchanter, locked: list[int]
